@@ -1,0 +1,114 @@
+@host = localhost:8082
+@api = http://{{host}}
+@token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
+@profileId=1
+@userId = 5
+###
+# Health Check
+GET {{api}}/healthcheck HTTP/1.1
+Content-Type: application/json
+###
+
+# Create a New Matrimonial Profile
+POST {{api}}/matrimonialProfiles HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "user_id":5,
+  "firstName": "John",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-05-15",
+  "gender": "Male",
+  "fatherName": "Michael Doe",
+  "motherName": "Sarah Doe",
+  "education": "Bachelor's Degree",
+  "income": 50000,
+  "religion": "Hindu",
+  "maritalStatus": "Single",
+  "height": 1.75,
+  "weight": 70,
+  "location": "New York",
+  "interests": "Reading, Traveling",
+  "language": "English",
+  "status": "Active",
+  "fatherOccupation": "Engineer",
+  "motherOccupation": "Teacher",
+  "siblingCount": 2,
+  "selfGotra": "Bharadwaj",
+  "motherGotra": "Vashistha",
+  "grandmotherGotra": "Kashyapa",
+  "preferredAgeFrom": 25,
+  "preferredAgeTo": 35,
+  "preferredHeight": 1.65,
+  "preferredReligion": "Hindu",
+  "preferredLocation": "India",
+  "preferredStatus": "Single"
+}
+
+###
+
+# Get List of Matrimonial Profiles
+GET {{api}}/matrimonialProfiles?page=1&limit=10 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+# Get List of Matrimonial Profiles By UserId
+GET {{api}}/matrimonialProfiles/byuserId/{{userId}}?page=1&limit=10 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+###
+
+# Find a Matrimonial Profile by ID
+GET {{api}}/matrimonialProfiles/{{profileId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+# Update a Matrimonial Profile by ID
+PUT {{api}}/matrimonialProfiles/{{profileId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "firstName": "Johny",
+  "lastName": "Doe",
+  "dateOfBirth": "1990-05-15",
+  "gender": "Male",
+  "fatherName": "Michael Doe",
+  "motherName": "Sarah Doe",
+  "education": "Master's Degree",
+  "income": 60000,
+  "religion": "Hindu",
+  "maritalStatus": "Single",
+  "height": 1.78,
+  "weight": 75,
+  "location": "California",
+  "interests": "Reading, Traveling, Cooking",
+  "language": "English, Hindi",
+  "status": "Active",
+  "fatherOccupation": "Engineer",
+  "motherOccupation": "Teacher",
+  "siblingCount": 3,
+  "selfGotra": "Bharadwaj",
+  "motherGotra": "Vashistha",
+  "grandmotherGotra": "Kashyapa",
+  "preferredAgeFrom": 26,
+  "preferredAgeTo": 36,
+  "preferredHeight": 1.70,
+  "preferredReligion": "Hindu",
+  "preferredLocation": "India",
+  "preferredStatus": "Single"
+}
+
+###
+
+# Delete a Matrimonial Profile by ID
+DELETE {{api}}/matrimonialProfiles/{{profileId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###

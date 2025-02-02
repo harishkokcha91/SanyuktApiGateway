@@ -1,0 +1,34 @@
+@host = localhost:8080
+@api = http://{{host}}
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzg0Nzk3ODYsInVzZXJpZCI6IjUifQ.BUIxn17ddrvmYLsHg4quzNSIkZp3AX48MCTOHMSfSbU
+
+
+###
+
+POST {{api}}/register
+Content-Type: application/json
+
+# {
+#   "email": "harish@gmail.com",
+#   "password": "password123"
+# }
+{
+  "fname": "Harish",
+  "lname": "Kokcha", 
+  "email": "harish@gmail.com", 
+  "password": "qwerty"
+  }
+###
+
+POST {{api}}/login
+Content-Type: application/json
+
+{
+   "email": "harish@gmail.com", 
+  "password": "qwerty"
+}
+
+###
+
+GET {{api}}/auth/protected
+Authorization: Bearer {{token}}

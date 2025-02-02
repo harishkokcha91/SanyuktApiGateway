@@ -1,0 +1,15 @@
+version: '3.3'
+
+services:
+  postgres:
+    image: postgres
+    container_name: postgresSanyukt
+    ports:
+      - "6501:5432"
+    env_file:
+      - ./app.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
