@@ -3,7 +3,9 @@ package controllers
 import (
 	"fmt"
 	"log"
+	"math"
 	"net/http"
+	"strconv"
 	"time"
 	"userprofile-service/database"
 	"userprofile-service/models"
@@ -13,8 +15,51 @@ import (
 
 func GetUsers(c *gin.Context) {
 	var users []models.Profile
-	database.DB.Find(&users)
-	c.JSON(http.StatusOK, users)
+
+	// Get the page and limit from the query parameters
+	page := c.DefaultQuery("page", "1")    // Default page to 1 if not provided
+	limit := c.DefaultQuery("limit", "10") // Default limit to 10 if not provided
+
+	// Convert page and limit to integers
+	pageInt, err := strconv.Atoi(page)
+	if err != nil || pageInt < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		return
+	}
+
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil || limitInt < 1 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+		return
+	}
+
+	// Calculate the offset based on the page number
+	offset := (pageInt - 1) * limitInt
+
+	// Fetch the data from the database with pagination
+	if err := database.DB.Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
+		return
+	}
+
+	// Get the total number of records
+	var totalRecords int64
+	if err := database.DB.Model(&models.Profile{}).Count(&totalRecords).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total records"})
+		return
+	}
+
+	// Calculate totalPages
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(limitInt)))
+
+	// Return the paginated data as response
+	c.JSON(http.StatusOK, gin.H{
+		"page":         pageInt,
+		"limit":        limitInt,
+		"totalPages":   totalPages,
+		"totalRecords": totalRecords,
+		"data":         users,
+	})
 }
 
 func GetUserByID(c *gin.Context) {

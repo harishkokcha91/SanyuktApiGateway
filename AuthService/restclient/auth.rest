@@ -16,6 +16,18 @@ Content-Type: application/json
   # {"userId": "", "name": "Harish kokcha", "age": 34, "email": "harish.kokcha@gmail.com", "image": ""}
 ###
 
+
+POST {{api}}/registerOne
+Content-Type: application/json
+
+{
+  "name": "Harish",
+  "email": "uiij@ds.com", 
+  "password": "qwerty"
+  }
+
+###
+
 POST {{api}}/login
 Content-Type: application/json
 

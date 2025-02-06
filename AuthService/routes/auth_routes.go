@@ -13,6 +13,7 @@ func SetupAuthRoutes(router *gin.Engine) {
 
 	router.POST("/register", controllers.Register)
 	router.POST("/login", controllers.Login)
+	router.POST("/registerOne", controllers.RegisterUserIfExistReturnUser)
 
 	auth := router.Group("/auth")
 	auth.Use(middleware.AuthMiddleware())
