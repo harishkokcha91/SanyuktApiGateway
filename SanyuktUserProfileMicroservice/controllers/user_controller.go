@@ -12,14 +12,14 @@ import (
 )
 
 func GetUsers(c *gin.Context) {
-	var users []models.UserProfile
+	var users []models.Profile
 	database.DB.Find(&users)
 	c.JSON(http.StatusOK, users)
 }
 
 func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
-	var user models.UserProfile
+	var user models.Profile
 	if err := database.DB.First(&user, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -30,7 +30,7 @@ func GetUserByID(c *gin.Context) {
 func GetProfileByUserID(c *gin.Context) {
 	fmt.Println("GetProfileByUserID")
 	id := c.Param("id") // Get user ID from the URL
-	var users []models.UserProfile
+	var users []models.Profile
 
 	// Find the user in the database
 	if err := database.DB.Find(&users, "user_id = ?", id).Error; err != nil {
@@ -42,7 +42,7 @@ func GetProfileByUserID(c *gin.Context) {
 }
 
 func CreateUser(c *gin.Context) {
-	var user models.UserProfile
+	var user models.Profile
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -64,7 +64,7 @@ func convertInDateFormate(inputDate string) time.Time {
 }
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var user models.UserProfile
+	var user models.Profile
 	if err := database.DB.First(&user, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
@@ -81,7 +81,7 @@ func UpdateUser(c *gin.Context) {
 
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
-	if err := database.DB.Delete(&models.UserProfile{}, id).Error; err != nil {
+	if err := database.DB.Delete(&models.Profile{}, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}

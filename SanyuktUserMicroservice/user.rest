@@ -1,7 +1,7 @@
-@host = localhost:8081
+@host = localhost:8083
 @api = http://{{host}}
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
-@userId=5
+@userId=4
 ###
 # Health Check
 GET {{api}}/healthcheck HTTP/1.1
@@ -15,9 +15,13 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "user_id": 5,
+  "user_id": 1,
   "name": "Harish",
-  "age": 30
+  "age": 30,
+  "email":"Kapil@gmail.com",
+  "image":"askduhf",
+  "status":"pending"
+
 }
 
 ###
@@ -44,7 +48,9 @@ Authorization: Bearer {{token}}
 {
   "name": "Updated Name",
   "email": "updated.email@example.com",
-  "age": 35
+  "age": 35,
+  "image":"askduhf",
+  "status":"pending"
 }
 
 ###

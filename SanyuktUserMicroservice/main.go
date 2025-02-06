@@ -18,5 +18,5 @@ func main() {
 	routes.UserRoutes(router)
 
 	// Start Server
-	router.Run(":8081") // Listen on port 8080
+	router.Run(":8083") // Listen on port 8080
 }

@@ -1,7 +1,7 @@
 @host = localhost:8082
 @api = http://{{host}}
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
-@profileId=1
+@profileId=5
 @userId = 5
 ###
 # Health Check
@@ -94,7 +94,7 @@ Authorization: Bearer {{token}}
   "motherOccupation": "Teacher",
   "siblingCount": 3,
   "selfGotra": "Bharadwaj",
-  "motherGotra": "Vashistha",
+  "motherGotra": "Vashistha",̥
   "grandmotherGotra": "Kashyapa",
   "preferredAgeFrom": 26,
   "preferredAgeTo": 36,

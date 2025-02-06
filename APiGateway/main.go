@@ -52,11 +52,11 @@ func main() {
 
 	// Routes to services
 	r.Any("/auth/*rest", reverseProxy("http://localhost:8080"))
-	r.Any("/user/*rest", reverseProxy("http://localhost:8081"))    // User service
+	r.Any("/user/*rest", reverseProxy("http://localhost:8083"))    // User service
 	r.Any("/profile/*rest", reverseProxy("http://localhost:8082")) // Profile service
 
 	// Start the API Gateway
-	log.Println("API Gateway running on http://localhost:8080")
+	log.Println("API Gateway running on http://localhost:8084")
 	if err := r.Run(":8084"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

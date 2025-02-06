@@ -8,16 +8,12 @@
 POST {{api}}/register
 Content-Type: application/json
 
-# {
-#   "email": "harish@gmail.com",
-#   "password": "password123"
-# }
 {
-  "fname": "Harish",
-  "lname": "Kokcha", 
-  "email": "harish@gmail.com", 
+  "name": "Harish",
+  "email": "kjn@ds.com", 
   "password": "qwerty"
   }
+  # {"userId": "", "name": "Harish kokcha", "age": 34, "email": "harish.kokcha@gmail.com", "image": ""}
 ###
 
 POST {{api}}/login

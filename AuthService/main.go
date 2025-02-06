@@ -13,7 +13,6 @@ func main() {
 
 	// Create Router
 	r := gin.Default()
-
 	// Setup Routes
 	routes.SetupAuthRoutes(r)
 

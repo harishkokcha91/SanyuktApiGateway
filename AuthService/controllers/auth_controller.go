@@ -17,7 +17,7 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-
+	fmt.Println(user)
 	// Hash password before storing
 	hashedPassword, _ := utils.HashPassword(user.Password)
 	user.Password = hashedPassword
@@ -26,7 +26,7 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully"})
+	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully", "user": user})
 }
 
 // Login user
