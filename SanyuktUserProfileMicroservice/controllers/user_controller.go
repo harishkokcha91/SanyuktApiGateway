@@ -197,22 +197,29 @@ func convertInDateFormate(inputDate string) time.Time {
 }
 func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
-	var user models.Profile
-	if err := database.DB.First(&user, id).Error; err != nil {
+	var existingUser models.Profile
+
+	// Fetch the existing user
+	if err := database.DB.First(&existingUser, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	if err := c.ShouldBindJSON(&user); err != nil {
+	// Create a new struct to hold updates
+	var updatedData models.Profile
+	if err := c.ShouldBindJSON(&updatedData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	database.DB.Save(&user)
-	c.JSON(http.StatusOK, user)
+	// Update only non-empty fields
+	database.DB.Model(&existingUser).Updates(updatedData)
+
+	c.JSON(http.StatusOK, existingUser)
 }
 
 func DeleteUser(c *gin.Context) {
+	fmt.Println("DeleteUser called")
 	id := c.Param("id")
 	if err := database.DB.Delete(&models.Profile{}, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})

@@ -1,7 +1,7 @@
 @host = localhost:8082
 @api = http://{{host}}
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
-@profileId=5
+@profileId=9
 @userId = 5
 ###
 # Health Check
@@ -100,34 +100,29 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-  "firstName": "Johny",
-  "lastName": "Doe",
-  "dateOfBirth": "1990-05-15",
-  "gender": "Male",
-  "fatherName": "Michael Doe",
-  "motherName": "Sarah Doe",
-  "education": "Master's Degree",
-  "income": 60000,
-  "religion": "Hindu",
-  "maritalStatus": "Single",
-  "height": 1.78,
-  "weight": 75,
-  "location": "California",
-  "interests": "Reading, Traveling, Cooking",
-  "language": "English, Hindi",
-  "status": "Active",
-  "fatherOccupation": "Engineer",
-  "motherOccupation": "Teacher",
-  "siblingCount": 3,
-  "selfGotra": "Bharadwaj",
-  "motherGotra": "Vashistha",̥
-  "grandmotherGotra": "Kashyapa",
-  "preferredAgeFrom": 26,
-  "preferredAgeTo": 36,
-  "preferredHeight": 1.70,
-  "preferredReligion": "Hindu",
-  "preferredLocation": "India",
-  "preferredStatus": "Single"
+  "status": "Pending",
+  "annualIncome": "1000000",
+  "birthPlace": "narnal",
+  "complexion": "fair",
+  "currentLocation": "jaipur",
+  "dateOfBirth": "2010-10-21",
+  "fatherName": "Pramod",
+  "fatherOccupation": "tailor",
+  "gotraGrandMother": "kokcha",
+  "gotraMother": "kachot",
+  "gotraSelf": "kokcha",
+  "height": "5.6",
+  "manglik": false,
+  "maritalStatus": "single",
+  "motherName": "saroj",
+  "motherOccupation": "house wife",
+  "name": "harish kokcha",
+  "occupation": "private job",
+  "phoneNumbers": "0890241937",
+  "profileFor": "Myself",
+  "qualification": "Btech",
+  "siblings": "2",
+  "user_id": 42
 }
 
 ###

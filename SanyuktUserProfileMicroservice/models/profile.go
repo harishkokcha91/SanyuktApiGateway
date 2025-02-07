@@ -1,12 +1,16 @@
 package models
 
+import (
+	"time"
+)
+
 type Profile struct {
 	ID               uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	UserId           uint   `json:"user_id"`
 	ProfileFor       string `json:"profileFor"`
 	Name             string `json:"name"`
 	Image            string `json:"image"`
-	DateOfBirth      string `json:"dateOfBirth"` // Updated to string to match the date format in the JSON
+	DateOfBirth      string `json:"dateOfBirth"` // Keeping it as string for JSON compatibility
 	BirthPlace       string `json:"birthPlace"`
 	Height           string `json:"height"`
 	Complexion       string `json:"complexion"`
@@ -18,13 +22,17 @@ type Profile struct {
 	FatherOccupation string `json:"fatherOccupation"`
 	MotherName       string `json:"motherName"`
 	MotherOccupation string `json:"motherOccupation"`
-	Siblings         string `json:"siblings"` // Keeping this as string since it can be a number or a list
+	Siblings         string `json:"siblings"`
 	Qualification    string `json:"qualification"`
 	Occupation       string `json:"occupation"`
-	AnnualIncome     string `json:"annualIncome"` // Updated to match JSON format
+	AnnualIncome     string `json:"annualIncome"`
 	MaritalStatus    string `json:"maritalStatus"`
 	Address          string `json:"address"`
 	CurrentLocation  string `json:"currentLocation"`
 	Status           string `json:"status"`
-	PhoneNumbers     string `json:"phoneNumbers"` // Keeping this as string for multiple numbers (could be CSV or JSON)
+	PhoneNumbers     string `json:"phoneNumbers"`
+
+	// Auto-managed timestamps
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
 }

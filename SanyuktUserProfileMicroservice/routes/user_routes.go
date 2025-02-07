@@ -7,6 +7,8 @@ import (
 )
 
 func UserRoutes(router *gin.Engine) {
+	// Serve static files from the "uploads" directory
+	router.Static("/uploads", "./uploads")
 	userGroup := router.Group("/matrimonialProfiles")
 	{
 		userGroup.GET("/", controllers.GetUsers)

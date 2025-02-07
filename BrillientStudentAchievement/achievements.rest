@@ -1,0 +1,64 @@
+@host = localhost:8085
+@api = http://{{host}}/brilliantstudent
+@token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
+@achievementId = 1
+@userId = 5
+
+### Health Check
+GET {{api}}/healthcheck HTTP/1.1
+Content-Type: application/json
+
+###
+
+# Create a New Achievement
+POST {{api}}/achievements HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "John Doe",
+  "achievement_type": "Academic",
+  "achievement": "Gold Medal in Mathematics Olympiad",
+  "description": "Awarded for outstanding performance in the International Mathematics Olympiad.",
+  "date_of_achievement": "2024-02-01",
+  "image": "https://example.com/image.jpg"
+}
+
+###
+
+# Get List of Achievements
+GET {{api}}/achievements?page=1&limit=10 HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+# Find an Achievement by ID
+GET {{api}}/achievements/{{achievementId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+# Update an Achievement by ID
+PUT {{api}}/achievements/{{achievementId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "John Doe",
+  "achievement_type": "Academic",
+  "achievement": "Platinum Medal in Mathematics Olympiad",
+  "description": "Updated: Won platinum medal in the International Mathematics Olympiad.",
+  "date_of_achievement": "2024-02-05",
+  "image": "https://example.com/new-image.jpg"
+}
+
+###
+
+# Delete an Achievement by ID
+DELETE {{api}}/achievements/{{achievementId}} HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+###
