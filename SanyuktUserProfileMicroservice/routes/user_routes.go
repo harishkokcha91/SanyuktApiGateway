@@ -15,5 +15,6 @@ func UserRoutes(router *gin.Engine) {
 		userGroup.POST("/", controllers.CreateUser)
 		userGroup.PUT("/:id", controllers.UpdateUser)
 		userGroup.DELETE("/:id", controllers.DeleteUser)
+		userGroup.POST("/upload/:id", controllers.UploadImageForUser)
 	}
 }

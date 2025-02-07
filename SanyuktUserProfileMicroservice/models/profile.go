@@ -5,6 +5,7 @@ type Profile struct {
 	UserId           uint   `json:"user_id"`
 	ProfileFor       string `json:"profileFor"`
 	Name             string `json:"name"`
+	Image            string `json:"image"`
 	DateOfBirth      string `json:"dateOfBirth"` // Updated to string to match the date format in the JSON
 	BirthPlace       string `json:"birthPlace"`
 	Height           string `json:"height"`
@@ -24,5 +25,6 @@ type Profile struct {
 	MaritalStatus    string `json:"maritalStatus"`
 	Address          string `json:"address"`
 	CurrentLocation  string `json:"currentLocation"`
+	Status           string `json:"status"`
 	PhoneNumbers     string `json:"phoneNumbers"` // Keeping this as string for multiple numbers (could be CSV or JSON)
 }
