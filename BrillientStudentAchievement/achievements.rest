@@ -1,5 +1,6 @@
 @host = localhost:8085
-@api = http://{{host}}/brilliantstudent
+# @api = http://{{host}}/brilliantstudent
+@api = http://{{host}}
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
 @achievementId = 1
 @userId = 5

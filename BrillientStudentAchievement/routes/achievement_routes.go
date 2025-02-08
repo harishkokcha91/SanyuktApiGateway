@@ -7,7 +7,7 @@ import (
 )
 
 func AchievementRoutes(router *gin.Engine) {
-	achievementGroup := router.Group("/brilliantstudent/achievements")
+	achievementGroup := router.Group("/achievements")
 	{
 		achievementGroup.POST("/", controllers.CreateAchievement)
 		achievementGroup.GET("/", controllers.GetAchievements)
