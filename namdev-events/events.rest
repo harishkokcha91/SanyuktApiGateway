@@ -1,0 +1,90 @@
+@host = localhost:8087
+@api = http://{{host}}/events
+@token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
+@eventId = 1
+
+### Health Check  
+GET {{api}}/healthcheck HTTP/1.1  
+Content-Type: application/json  
+
+###  
+
+# Create a New Event  
+POST {{api}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+{  
+  "name": "Namdev Jayanti Celebration",  
+  "description": "Annual celebration of Sant Namdev Jayanti with devotional programs.",  
+  "event_date": "2024-11-15T18:00:00Z",  
+  "venue": "Shri Namdev Bhavan",  
+  "address": "123 Community Hall Road",  
+  "city": "Pune",  
+  "state": "Maharashtra",  
+  "zip_code": "411001",  
+  "country": "India",  
+  "organizer": "Namdev Samaj Trust",  
+  "email": "info@namdevsamaj.org",  
+  "phone": "+91 9876543210",  
+  "category": "Cultural",  
+  "capacity": 500,  
+  "attendees_registered": 100,  
+  "status": "Scheduled",  
+  "image": "https://example.com/event-image.jpg",  
+  "registration_link": "https://namdevsamaj.org/register",  
+  "is_online": false,  
+  "ticket_price": 0  
+}  
+
+###  
+
+# Get List of Events (Paginated)  
+GET {{api}}?page=1&limit=10 HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+###  
+
+# Get Event by ID  
+GET {{api}}/{{eventId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+###  
+
+# Update an Event by ID  
+PUT {{api}}/{{eventId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+{  
+  "name": "Namdev Jayanti Grand Celebration",  
+  "description": "Updated: Bigger celebration with guest speakers and bhajan kirtan.",  
+  "event_date": "2024-11-20T19:00:00Z",  
+  "venue": "Shri Namdev Bhavan",  
+  "city": "Mumbai",  
+  "state": "Maharashtra",  
+  "zip_code": "400001",  
+  "country": "India",  
+  "organizer": "Namdev Seva Sangh",  
+  "email": "contact@namdevsevasangh.org",  
+  "phone": "+91 9876543210",  
+  "category": "Spiritual",  
+  "capacity": 1000,  
+  "attendees_registered": 300,  
+  "status": "Updated",  
+  "image": "https://example.com/new-event-image.jpg",  
+  "registration_link": "https://namdevsevasangh.org/register",  
+  "is_online": false,  
+  "ticket_price": 0  
+}  
+
+###  
+
+# Delete an Event by ID  
+DELETE {{api}}/{{eventId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+###  
