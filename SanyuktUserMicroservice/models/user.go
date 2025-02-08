@@ -1,15 +1,14 @@
 package models
 
-import "time"
+import "gorm.io/gorm"
 
-type UserDetails struct {
-	UserId       int       `json:"user_id" gorm:"unique;not null"`
-	Name         string    `json:"name"`
-	Age          int       `json:"age"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	Email        string    `json:"email"`
-	Image        string    `json:"image"`
-	PhoneNumbers string    `json:"phone_number"`
-	Status       string    `json:"status"`
+type User struct {
+	gorm.Model
+	Password     string `json:"-"` // Hide password in JSON responses
+	Email        string `gorm:"unique" json:"email"`
+	Name         string `json:"name"`
+	Age          int    `json:"age"`
+	Image        string `json:"image"`
+	PhoneNumbers string `json:"phoneNumbers"`
+	Status       string `gorm:"default:'pending'" json:"status"`
 }

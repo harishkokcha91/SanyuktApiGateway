@@ -28,7 +28,7 @@ func Connect() {
 	}
 
 	// Auto-Migrate Models
-	db.AutoMigrate(&models.UserDetails{})
+	db.AutoMigrate(&models.User{})
 
 	DB = db
 	log.Println("Database connected successfully")
