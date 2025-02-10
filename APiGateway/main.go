@@ -56,6 +56,7 @@ func main() {
 	r.Any("/profile/*rest", reverseProxy("http://localhost:8082"))          // Profile service
 	r.Any("/brilliantstudent/*rest", reverseProxy("http://localhost:8085")) // Profile service
 	r.Any("/image/*rest", reverseProxy("http://localhost:8086"))            //Image upload service
+	r.Any("/namdevevents/*rest", reverseProxy("http://localhost:8087"))     //Image upload service
 
 	// Start the API Gateway
 	log.Println("API Gateway running on http://localhost:8084")

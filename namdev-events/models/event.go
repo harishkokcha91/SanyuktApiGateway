@@ -6,7 +6,7 @@ type Event struct {
 	ID          uint      `json:"id" gorm:"primaryKey"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	EventDate   time.Time `json:"event_date"`
+	EventDate   string    `json:"event_date"`
 	Venue       string    `json:"venue"`
 	Address     string    `json:"address"`
 	City        string    `json:"city"`
@@ -17,13 +17,13 @@ type Event struct {
 	Email       string    `json:"email"`
 	Phone       string    `json:"phone"`
 	Category    string    `json:"category"`
-	Capacity    int       `json:"capacity"`
-	Attendees   int       `json:"attendees_registered"`
+	Capacity    string    `json:"capacity"`
+	Attendees   string    `json:"attendees_registered"`
 	Status      string    `json:"status"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	Image       string    `json:"image"`
 	RegLink     string    `json:"registration_link"`
 	IsOnline    bool      `json:"is_online"`
-	TicketPrice float64   `json:"ticket_price"`
+	TicketPrice string    `json:"ticket_price"`
 }
