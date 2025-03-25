@@ -1,0 +1,66 @@
+@host = localhost:8088
+@api = http://{{host}}/businesses
+@token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM5NzksInN1YiI6MX0.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
+@businessId = 1
+
+### Health Check  
+GET {{api}}/healthcheck HTTP/1.1  
+Content-Type: application/json  
+
+### Create a New Business  
+POST {{api}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+{  
+  "name": "Shree Namdev Enterprises",  
+  "category": "Retail",  
+  "owner": "Ramesh Namdev",  
+  "phone": "+91 9876543210",  
+  "email": "info@namdeventerprises.com",  
+  "address": "123 Market Street",  
+  "city": "Pune",  
+  "state": "Maharashtra",  
+  "location":"Namdev",
+  "zip_code": "411001",  
+  "country": "India",  
+  "description": "A one-stop shop for all daily needs.",  
+  "image": "https://example.com/business-image.jpg",  
+  "website": "https://namdeventerprises.com",  
+  "status": "Active"  
+}  
+
+### Get List of Businesses (Paginated)  
+GET {{api}}?page=1&limit=10 HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+### Get Business by ID  
+GET {{api}}/{{businessId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+### Update a Business by ID  
+PUT {{api}}/{{businessId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
+
+{  
+  "name": "Shree Namdev Supermarket",  
+  "category": "Supermarket",  
+  "owner": "Ramesh Namdev",  
+  "phone": "+91 9876543210",  
+  "email": "contact@namdevsupermarket.com",  
+  "city": "Mumbai",  
+  "state": "Maharashtra",  
+  "zip_code": "400001",  
+  "description": "Expanded into a full-fledged supermarket.",  
+  "image": "https://example.com/new-business-image.jpg",  
+  "website": "https://namdevsupermarket.com",  
+  "status": "Updated"  
+}  
+
+### Delete a Business by ID  
+DELETE {{api}}/{{businessId}} HTTP/1.1  
+Content-Type: application/json  
+Authorization: Bearer {{token}}  
