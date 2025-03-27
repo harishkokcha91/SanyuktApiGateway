@@ -20,6 +20,6 @@ func SetupAuthRoutes(router *gin.Engine) {
 	auth.GET("/protected", func(c *gin.Context) {
 		fmt.Println(c.Get("userid"))
 		userid, _ := c.Get("userid")
-		c.JSON(200, gin.H{"message": "Welcome " + userid.(string)})
+		c.JSON(200, gin.H{"message": userid.(string)})
 	})
 }
