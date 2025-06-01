@@ -1,6 +1,6 @@
-@host = localhost:8080
+@host = 127.0.0.1:8080
 @api = http://{{host}}
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzg0Nzk3ODYsInVzZXJpZCI6IjUifQ.BUIxn17ddrvmYLsHg4quzNSIkZp3AX48MCTOHMSfSbU
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDExMTA0OTUsInVzZXJpZCI6IjIifQ.CRZ51CF3MyYAfJps3inSe7qV6wgMqdQOg1r5D7duT5Q
 
 
 ###
@@ -10,7 +10,7 @@ Content-Type: application/json
 
 {
   "name": "Harish",
-  "email": "kjn@ds.com", 
+  "email": "hkokcha@gmail.com", 
   "password": "qwerty"
   }
   # {"userId": "", "name": "Harish kokcha", "age": 34, "email": "harish.kokcha@gmail.com", "image": ""}
@@ -32,7 +32,7 @@ POST {{api}}/login
 Content-Type: application/json
 
 {
-   "email": "harish@gmail.com", 
+  "email": "hkokcha@gmail.com",
   "password": "qwerty"
 }
 
