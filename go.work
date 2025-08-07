@@ -1,0 +1,13 @@
+go 1.23.12
+
+use (
+	./APiGateway
+	./AuthService
+	./BrillientStudentAchievement
+	./BusinessMicroservice
+	./DBService
+	./ImageUploadService
+	./NamdevEvents
+	./UserMicroservice
+	./UserProfileMicroservice
+)
