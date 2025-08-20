@@ -3,28 +3,32 @@ package database
 import (
 	"fmt"
 	"log"
-	"userprofile-service/models"
+	"os"
+	"user-micro-service/models"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-const (
-	host     = "localhost"
-	port     = 6501
-	user     = "postgres"
-	password = "admin"
-	dbname   = "sanyukt"
-)
-
 func Connect() {
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
-		host, port, user, password)
+	// Load environment variables from .env file (optional)
+	_ = godotenv.Load()
+
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbname := os.Getenv("DB_NAME")
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to the database:", err)
+		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
 	// Auto-Migrate Models
