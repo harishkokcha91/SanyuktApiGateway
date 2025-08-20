@@ -9,8 +9,8 @@ POST {{api}}/register
 Content-Type: application/json
 
 {
-  "name": "Harish",
-  "email": "kjn@ds.com", 
+  "name": "Kapil",
+  "email": "kapil@ds.com", 
   "password": "qwerty"
   }
   # {"userId": "", "name": "Harish kokcha", "age": 34, "email": "harish.kokcha@gmail.com", "image": ""}

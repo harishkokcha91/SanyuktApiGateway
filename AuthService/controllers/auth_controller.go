@@ -53,6 +53,7 @@ func Login(c *gin.Context) {
 	fmt.Println(user)
 	// Generate JWT Token
 	userIDStr := fmt.Sprintf("%d", user.ID)
+	fmt.Println(userIDStr)
 	token, _ := utils.GenerateToken(userIDStr)
 	// claims, err := utils.ValidateToken(token)
 	// if err != nil {
@@ -61,7 +62,7 @@ func Login(c *gin.Context) {
 	// 	return
 	// }
 
-	c.JSON(http.StatusOK, gin.H{"token": token})
+	c.JSON(http.StatusOK, gin.H{"token": token, "user": user, "message": "Login successful"})
 }
 
 // Register user
