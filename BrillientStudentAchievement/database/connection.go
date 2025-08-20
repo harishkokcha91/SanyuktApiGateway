@@ -4,23 +4,25 @@ import (
 	"brilliant-student/models"
 	"fmt"
 	"log"
+	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 var DB *gorm.DB
 
-const (
-	host     = "localhost"
-	port     = 6501
-	user     = "postgres"
-	password = "admin"
-	dbname   = "sanyukt"
-)
-
 func Connect() {
-	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s sslmode=disable",
+
+	_ = godotenv.Load()
+
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable",
 		host, port, user, password)
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
