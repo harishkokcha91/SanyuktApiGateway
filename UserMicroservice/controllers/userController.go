@@ -4,8 +4,8 @@ import (
 	"math"
 	"net/http"
 	"strconv"
-	"userprofile-service/database"
-	"userprofile-service/models"
+	"user-micro-service/database"
+	"user-micro-service/models"
 
 	"github.com/gin-gonic/gin"
 )

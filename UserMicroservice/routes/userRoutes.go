@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"userprofile-service/controllers"
+	"user-micro-service/controllers"
 
 	"github.com/gin-gonic/gin"
 )
