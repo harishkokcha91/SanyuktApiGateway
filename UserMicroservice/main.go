@@ -1,8 +1,8 @@
 package main
 
 import (
-	"userprofile-service/database"
-	"userprofile-service/routes"
+	"user-micro-service/database"
+	"user-micro-service/routes"
 
 	"github.com/gin-gonic/gin"
 )
