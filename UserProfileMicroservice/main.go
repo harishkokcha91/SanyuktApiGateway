@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"userprofile-service/database"
 	"userprofile-service/routes"
@@ -29,7 +30,9 @@ func main() {
 
 	// Set up Router
 	router := gin.Default()
-
+	router.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "UserProfileService is running"})
+	})
 	// Register Routes
 	routes.UserRoutes(router)
 

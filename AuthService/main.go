@@ -4,6 +4,7 @@ import (
 	"auth-service/config"
 	"auth-service/routes"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,10 @@ func main() {
 	// Create Router
 	r := gin.Default()
 	// Setup Routes
+	// Healthcheck route
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "AuthService is running"})
+	})
 	routes.SetupAuthRoutes(r)
 
 	log.Printf("Achievement service running on port %s", port)

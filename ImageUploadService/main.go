@@ -35,6 +35,10 @@ func main() {
 
 	router := gin.Default()
 
+	// Healthcheck route
+	router.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ImageUploadService is running"})
+	})
 	// Route for image upload
 	router.POST("/upload", uploadImage)
 

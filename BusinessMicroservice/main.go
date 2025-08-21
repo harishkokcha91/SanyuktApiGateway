@@ -4,6 +4,7 @@ import (
 	"business-microservice/database"
 	"business-microservice/routes"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,12 @@ func main() {
 	database.Connect()
 
 	r := gin.Default()
+
+	// Healthcheck route
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "BusinessService is running"})
+	})
+
 	routes.BusinessRoutes(r)
 
 	log.Printf("Business service running on port %s", businessPort)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"user-micro-service/database"
 	"user-micro-service/routes"
@@ -26,7 +27,9 @@ func main() {
 
 	// Set up Router
 	router := gin.Default()
-
+	router.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "UserService is running"})
+	})
 	// Register Routes
 	routes.UserRoutes(router)
 

@@ -4,6 +4,7 @@ import (
 	"log"
 	"namdev-events/database"
 	"namdev-events/routes"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -30,6 +31,9 @@ func main() {
 	database.Connect()
 
 	r := gin.Default()
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Events is running"})
+	})
 	routes.EventRoutes(r)
 
 	log.Printf("Event service running on port %s", port)

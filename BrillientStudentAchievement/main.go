@@ -4,6 +4,7 @@ import (
 	"brilliant-student/database"
 	"brilliant-student/routes"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -26,6 +27,11 @@ func main() {
 	database.Connect()
 
 	r := gin.Default()
+
+	// Healthcheck route
+	r.GET("/healthcheck", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "Achievement is running"})
+	})
 	routes.AchievementRoutes(r)
 
 	log.Printf("Achievement service running on port %s", port)

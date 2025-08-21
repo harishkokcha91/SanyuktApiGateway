@@ -76,8 +76,8 @@ func main() {
 	r.Any("/namdevbusinesses/*rest", reverseProxy(businessServiceURL))
 
 	// Start the API Gateway
-	log.Println("API Gateway running on http://localhost:8084")
-	if err := r.Run(":8084"); err != nil {
+	log.Println("API Gateway running on http://localhost:8080")
+	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
