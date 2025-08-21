@@ -1,5 +1,5 @@
-@host = localhost:8080
-@api = http://{{host}}/namdevbusinesses
+@host = localhost:8083
+@api = http://{{host}}
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM5NzksInN1YiI6MX0.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
 @businessId = 1
 

@@ -1,29 +1,97 @@
-# Makefile for managing all microservices and PostgreSQL
+# Makefile for managing microservices and PostgreSQL
 
-# Run all services
-run-all:
+# Docker-based operations
+run-all-docker:
 	docker-compose up -d
-# Stop all running containers
+
 stop-all:
 	docker-compose stop
-# Build all services
+
 build-all:
 	docker-compose build
-# Rebuild all services (force rebuild)
+
 rebuild-all:
 	docker-compose build --no-cache
-# View logs for all services
+
 logs:
 	docker-compose logs -f
-# Bring everything down (stop + remove containers, networks, volumes)
+
 down:
 	docker-compose down -v
-# Restart all services
+
 restart:
 	docker-compose down -v && docker-compose up -d
-# Show status of all containers
+
 status:
 	docker-compose ps
-.PHONY: run-all stop-all build-all rebuild-all logs down restart status \
-        run-apigateway run-auth run-brillientstudent run-business \
-        run-DBService run-imageUpload run-event run-user run-userProfile
+
+# Local Go-based execution
+run-all-local: run-db-local
+	$(MAKE) run-apigateway &
+	$(MAKE) run-auth &
+	$(MAKE) run-brillientstudent &
+	$(MAKE) run-business &
+	$(MAKE) run-DBService &
+	$(MAKE) run-imageUpload &
+	$(MAKE) run-event &
+	$(MAKE) run-user &
+	$(MAKE) run-userProfile &
+	wait
+
+# Individual microservice runners
+run-apigateway:
+	cd APiGateway && go run main.go
+
+run-auth:
+	cd AuthService && go run main.go
+
+run-brillientstudent:
+	cd BrillientStudentAchievement && go run main.go
+
+run-business:
+	cd BusinessMicroservice && go run main.go
+
+run-DBService:
+	cd DBService && go run main.go
+
+run-imageUpload:
+	cd ImageUploadService && go run main.go
+
+run-event:
+	cd NamdevEvents && go run main.go
+
+run-user:
+	cd UserMicroservice && go run main.go
+
+run-userProfile:
+	cd UserProfileMicroservice && go run main.go
+
+
+# Start only PostgreSQL container for local development
+run-db-local:
+	docker-compose -f docker-compose.yml up -d postgres
+
+# Help command
+help:
+    @echo "Usage: make [target]"
+	@echo ""
+    @echo "Docker-based targets:"
+	@echo "  run-all-docker     Run all services via Docker Compose"
+	@echo "  stop-all           Stop all running containers"
+	@echo "  build-all          Build all services"
+	@echo "  rebuild-all        Rebuild all services (no cache)"
+	@echo "  logs               View logs for all services"
+	@echo "  down               Stop and remove containers, networks, volumes"
+	@echo "  restart            Restart all services"
+	@echo "  status             Show container status"
+	@echo ""
+	@echo "Local Go-based targets:"
+	@echo "  run-all-local      Run all services locally via go run"
+	@echo "  run-<service>      Run individual service (e.g., run-auth)"
+	@echo ""
+	@echo "Use 'make help' to see this message again."
+
+# Declare phony targets
+.PHONY: run-all-docker stop-all build-all rebuild-all logs down restart status \
+		run-all-local run-apigateway run-auth run-brillientstudent run-business \
+		run-DBService run-imageUpload run-event run-user run-userProfile help
