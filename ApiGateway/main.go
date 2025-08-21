@@ -5,10 +5,12 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 // reverseProxy sets up a reverse proxy for the target service
@@ -32,6 +34,10 @@ func reverseProxy(target string) gin.HandlerFunc {
 	}
 }
 
+func init() {
+	_ = godotenv.Load(".env") // Load local env file
+}
+
 func main() {
 	r := gin.Default()
 
@@ -51,14 +57,23 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	// Routes to services
-	r.Any("/auth/*rest", reverseProxy("http://localhost:8080"))
-	r.Any("/user/*rest", reverseProxy("http://localhost:8083"))             // User service
-	r.Any("/profile/*rest", reverseProxy("http://localhost:8082"))          // Profile service
-	r.Any("/brilliantstudent/*rest", reverseProxy("http://localhost:8085")) // Profile service
-	r.Any("/image/*rest", reverseProxy("http://localhost:8086"))            //Image upload service
-	r.Any("/namdevevents/*rest", reverseProxy("http://localhost:8087"))     //Events service
-	r.Any("/namdevbusinesses/*rest", reverseProxy("http://localhost:8088")) //Business service
+	// Read service URLs from environment variables
+	authServiceURL := os.Getenv("AUTH_SERVICE_URL")
+	userServiceURL := os.Getenv("USER_SERVICE_URL")
+	profileServiceURL := os.Getenv("PROFILE_SERVICE_URL")
+	brilliantStudentURL := os.Getenv("BRILLIANT_STUDENT_URL")
+	imageUploadURL := os.Getenv("IMAGE_UPLOAD_URL")
+	eventsServiceURL := os.Getenv("EVENTS_SERVICE_URL")
+	businessServiceURL := os.Getenv("BUSINESS_SERVICE_URL")
+
+	// Routes
+	r.Any("/auth/*rest", reverseProxy(authServiceURL))
+	r.Any("/user/*rest", reverseProxy(userServiceURL))
+	r.Any("/profile/*rest", reverseProxy(profileServiceURL))
+	r.Any("/brilliantstudent/*rest", reverseProxy(brilliantStudentURL))
+	r.Any("/image/*rest", reverseProxy(imageUploadURL))
+	r.Any("/namdevevents/*rest", reverseProxy(eventsServiceURL))
+	r.Any("/namdevbusinesses/*rest", reverseProxy(businessServiceURL))
 
 	// Start the API Gateway
 	log.Println("API Gateway running on http://localhost:8084")

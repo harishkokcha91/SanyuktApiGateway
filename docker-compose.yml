@@ -1,45 +1,119 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres
     container_name: postgresSanyukt
     ports:
       - "6501:5432"
-    # env_file:
-    #   - ./app.env
+    env_file:
+      - ./app.env.docker
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  apigateway:
+    build:
+      context: ./ApiGateway
+    container_name: apigateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres      
+      - auth-service
+      - user
+      - userprofile
+      - brillientstudent
+      - imageupload
+      - event
+      - business
+    env_file:
+      - ./app.env.docker      
+    environment:
+        AUTH_SERVICE_URL: http://auth-service:8080
+        USER_SERVICE_URL: http://user-micro-service:8080
+        PROFILE_SERVICE_URL: http://userprofile-service:8080
+        BRILLIANT_STUDENT_URL: http://brillientstudent:8080
+        IMAGE_UPLOAD_URL: http://imageupload:8080
+        EVENTS_SERVICE_URL: http://event:8080
+        BUSINESS_SERVICE_URL: http://business:8080
+
+
   auth-service:
     build:
-      context: ./auth-service
-      dockerfile: Dockerfile
+      context: ./AuthService
     container_name: auth-service
     ports:
       - "8081:8080"
     depends_on:
       - postgres
-    # environment:
-    #   - DB_HOST=postgres
-    #   - DB_PORT=5432
-    #   - DB_USER=postgres
-    #   - DB_PASSWORD=yourpassword
-    #   - DB_NAME=yourdbname
+    env_file:
+      - ./app.env.docker
 
-  namdev-events:
+  brillientstudent:
     build:
-      context: ./namdev-events
-      dockerfile: Dockerfile
-    container_name: namdev-events
+      context: ./BrillientStudentAchievement
+    container_name: brillientstudent
     ports:
       - "8082:8080"
     depends_on:
       - postgres
-    # environment:
-    #   - DB_HOST=postgres
-    #   - DB_PORT=5432
-    #   - DB_USER=postgres
-    #   - DB_PASSWORD=yourpassword
-    #   - DB_NAME=yourdbname
+    env_file:
+      - ./app.env.docker
+
+  business:
+    build:
+      context: ./BusinessMicroservice
+    container_name: business
+    ports:
+      - "8083:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./app.env.docker
+
+  imageupload:
+    build:
+      context: ./ImageUploadService
+    container_name: imageupload
+    ports:
+      - "8084:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./app.env.docker
+
+  event:
+    build:
+      context: ./NamdevEvents
+    container_name: event
+    ports:
+      - "8085:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./app.env.docker
+
+  user:
+    build:
+      context: ./UserMicroservice
+    container_name: user-micro-service
+    ports:
+      - "8086:8080"
+    depends_on:
+      - postgres
+    env_file:
+      - ./app.env.docker
+
+  userprofile:
+    build:
+      context: ./UserProfileMicroservice
+    container_name: userprofile-service
+    ports:
+      - "8087:8080"
+    depends_on:
+      - postgres
+    env_file: 
+      - ./app.env.docker
 
 volumes:
   postgres_data:

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 )
 
 // Max file size (2MB)
@@ -20,6 +21,10 @@ var allowedExtensions = map[string]bool{
 	".jpg":  true,
 	".jpeg": true,
 	".png":  true,
+}
+
+func init() {
+	_ = godotenv.Load(".env") // Load local env file if present
 }
 
 func main() {
@@ -36,9 +41,13 @@ func main() {
 	// Serve uploaded images
 	router.Static("/uploads", "./uploads")
 
-	// Start server
-	port := "8086"
-	log.Printf("Server started on http://localhost:%s", port)
+	// Get port from environment variable
+	port := os.Getenv("IMAGE_UPLOAD_PORT")
+	if port == "" {
+		port = "8084" // Default for local run
+	}
+
+	log.Printf("Image Upload Service started on http://localhost:%s", port)
 	router.Run(":" + port)
 }
 
@@ -74,6 +83,6 @@ func uploadImage(c *gin.Context) {
 	}
 
 	// Return image URL
-	imageURL := fmt.Sprintf("http://localhost:8086/uploads/%s", filename)
+	imageURL := fmt.Sprintf("http://localhost:8084/uploads/%s", filename)
 	c.JSON(http.StatusOK, gin.H{"message": "Image uploaded successfully", "image_url": imageURL})
 }

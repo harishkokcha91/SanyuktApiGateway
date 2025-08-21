@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM golang:1.23 AS builder
+FROM golang:1.22.11-alpine AS builder
 
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
@@ -11,7 +11,7 @@ RUN go mod download
 COPY . .
 
 # Build the binary from the correct path
-RUN go build -o user-micro-service .
+RUN go build -o api-gateway .
 
 
 # Stage 2: Runtime
@@ -19,6 +19,6 @@ FROM alpine:latest
 
 WORKDIR /app
 
-COPY --from=builder /app/user-micro-service .
+COPY --from=builder /app/api-gateway .
 
-ENTRYPOINT ["/app/user-micro-service"]
+ENTRYPOINT ["/app/api-gateway"]
