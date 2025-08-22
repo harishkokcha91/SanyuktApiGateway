@@ -1,5 +1,5 @@
-@host = localhost:8081
-@api = http://{{host}}
+@host = localhost:8080
+@api = http://{{host}}/auth
 @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Mzg0Nzk3ODYsInVzZXJpZCI6IjUifQ.BUIxn17ddrvmYLsHg4quzNSIkZp3AX48MCTOHMSfSbU
 
 

@@ -26,7 +26,8 @@ status:
 	docker-compose ps
 
 # Local Go-based execution
-run-all-local: run-db-local
+run-all-local: 
+	$(MAKE) run-db-local
 	$(MAKE) run-apigateway &
 	$(MAKE) run-auth &
 	$(MAKE) run-brillientstudent &
@@ -40,7 +41,7 @@ run-all-local: run-db-local
 
 # Individual microservice runners
 run-apigateway:
-	cd APiGateway && go run main.go
+	cd ApiGateway && go run main.go
 
 run-auth:
 	cd AuthService && go run main.go
