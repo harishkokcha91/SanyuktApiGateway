@@ -1,5 +1,5 @@
-@host = localhost:8083
-@api = http://{{host}}
+@host = localhost:8080
+@api = http://{{host}}/user
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
 @userId=4
 ###
@@ -10,7 +10,7 @@ Content-Type: application/json
 ###
 
 # Create a New User Profile
-POST {{api}}/users HTTP/1.1
+POST {{api}}/users/ HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
