@@ -5,8 +5,8 @@ go 1.22
 toolchain go1.22.11
 
 require (
-	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v4 v4.5.2
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.32.0
 	gorm.io/driver/postgres v1.5.11
