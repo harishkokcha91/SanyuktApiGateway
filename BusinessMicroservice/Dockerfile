@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM golang:1.22.11-alpine AS builder
+FROM golang:1.25 AS builder
 
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
