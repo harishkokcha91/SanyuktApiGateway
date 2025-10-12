@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -75,9 +76,19 @@ func main() {
 	r.Any("/namdevevents/*rest", reverseProxy(eventsServiceURL))
 	r.Any("/namdevbusinesses/*rest", reverseProxy(businessServiceURL))
 
+	fmt.Println("AuthService URLs:", authServiceURL)
+	fmt.Println("BrilliantStudent URLs:", brilliantStudentURL)
+	fmt.Println("BusinessService URLs:", businessServiceURL)
+	fmt.Println("ImageUpload URLs:", imageUploadURL)
+	fmt.Println("EventsService URLs:", eventsServiceURL)
+	fmt.Println("UserService URLs:", userServiceURL)
+	fmt.Println("ProfileService URLs:", profileServiceURL)
+	fmt.Println("API Gateway is running...")
 	// Start the API Gateway
 	log.Println("API Gateway running on http://localhost:8080")
+
 	if err := r.Run(":8080"); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
+
 }

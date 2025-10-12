@@ -5,6 +5,7 @@ go 1.25.2
 require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/golang-jwt/jwt/v4 v4.5.2
+	github.com/harishkokcha91/SanyuktAuthUtils v0.0.0-20250828052746-e8afaf828750
 	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.43.0
 	gorm.io/driver/postgres v1.6.0

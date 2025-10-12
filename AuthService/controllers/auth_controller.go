@@ -3,9 +3,10 @@ package controllers
 import (
 	"auth-service/config"
 	"auth-service/models"
-	"auth-service/utils"
 	"fmt"
 	"net/http"
+
+	"github.com/harishkokcha91/SanyuktAuthUtils/utils"
 
 	"github.com/gin-gonic/gin"
 )

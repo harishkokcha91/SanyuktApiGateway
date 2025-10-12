@@ -1,5 +1,5 @@
-@host = localhost:8082
-@api = http://{{host}}
+@host = localhost:8080
+@api = http://{{host}}/profile
 @token = eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MjQxMzY4NzksImlhdCI6MTcyNDEzNTk3OSwibmJmIjoxNzI0MTM1OTc5LCJzdWIiOjF9.xCd5Vr4q6X4Ih8ekreFj29BOVrDAEiQTz-SbDTcvmhb0FpEQtn9-HDJteFy1ApbDJD2ExogH5SBFsS6pQZVH7w
 @profileId=9
 @userId = 51
@@ -9,7 +9,7 @@ GET {{api}}/healthcheck HTTP/1.1
 Content-Type: application/json
 ###
 # Create a New Matrimonial Profile
-POST {{api}}/matrimonialProfiles HTTP/1.1
+POST {{api}}/matrimonialProfiles/ HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
@@ -74,7 +74,7 @@ Authorization: Bearer {{token}}
 ###
 
 # Get List of Matrimonial Profiles
-GET {{api}}/matrimonialProfiles?page=1&limit=10 HTTP/1.1
+GET {{api}}/matrimonialProfiles/?page=1&limit=10 HTTP/1.1
 Content-Type: application/json
 Authorization: Bearer {{token}}
 
