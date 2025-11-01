@@ -2,6 +2,7 @@ package main
 
 import (
 	"SanyuktNamdev/config"
+	"SanyuktNamdev/database"
 	"SanyuktNamdev/routes"
 	"fmt"
 	"log"
@@ -29,7 +30,8 @@ func main() {
 
 	// Initialize Database
 	config.InitDB()
-
+	// Initialize Database
+	database.Connect()
 	// Create Router
 	r := gin.Default()
 	// Setup Routes
