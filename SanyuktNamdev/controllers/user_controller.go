@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetUsers(c *gin.Context) {
+func GetProfiles(c *gin.Context) {
 	var users []models.Profile
 
 	// Get the page and limit from the query parameters
@@ -65,7 +65,7 @@ func GetUsers(c *gin.Context) {
 	})
 }
 
-func GetUserByID(c *gin.Context) {
+func GetProfileByID(c *gin.Context) {
 	id := c.Param("id")
 	var user models.Profile
 	if err := database.DB.First(&user, id).Error; err != nil {
@@ -75,8 +75,8 @@ func GetUserByID(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
-func GetProfileByUserID(c *gin.Context) {
-	fmt.Println("GetProfileByUserID")
+func GetProfilesByUserID(c *gin.Context) {
+	fmt.Println("GetProfilesByUserID")
 	id := c.Param("id") // Get user ID from the URL
 	var users []models.Profile
 
@@ -132,7 +132,7 @@ func GetProfileByUserID(c *gin.Context) {
 	})
 }
 
-func CreateUser(c *gin.Context) {
+func CreateProfile(c *gin.Context) {
 	var user models.Profile
 	if err := c.ShouldBindJSON(&user); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -143,13 +143,13 @@ func CreateUser(c *gin.Context) {
 	c.JSON(http.StatusCreated, user)
 }
 
-func UploadImageForUser(c *gin.Context) {
-	fmt.Println("UploadImageForUser")
+func UploadProfileImage(c *gin.Context) {
+	fmt.Println("UploadProfileImage")
 	// Get user ID from URL params
 	userID := c.Param("id")
 	fmt.Println(userID)
 	// Upload the image
-	imagePath, err := UploadImage(c, userID)
+	imagePath, err := UploadImageForProfile(c, userID)
 	if err != nil {
 		fmt.Println("err ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -167,7 +167,7 @@ func UploadImageForUser(c *gin.Context) {
 }
 
 // UploadImage handles image upload and returns the file path
-func UploadImage(c *gin.Context, userID string) (string, error) {
+func UploadImageForProfile(c *gin.Context, userID string) (string, error) {
 	// Get file from form
 	file, header, err := c.Request.FormFile("image")
 	if err != nil {
@@ -201,7 +201,7 @@ func UploadImage(c *gin.Context, userID string) (string, error) {
 	return filepath, nil
 }
 
-func CreateUserWithImage(c *gin.Context) {
+func CreateProfileWithImage(c *gin.Context) {
 	// Parse form data
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10MB limit
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large"})
@@ -215,7 +215,7 @@ func CreateUserWithImage(c *gin.Context) {
 	user.BirthPlace = c.PostForm("birthPlace")
 
 	// Upload image
-	imagePath, err := UploadImage(c, user.Name)
+	imagePath, err := UploadImageForProfile(c, user.Name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -228,7 +228,7 @@ func CreateUserWithImage(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": user})
 }
 
-func convertInDateFormate(inputDate string) time.Time {
+func convertProfileDateFormat(inputDate string) time.Time {
 	const customDateFormat = "2006-01-02" // Format for date without time component
 
 	// Parse the date from JSON
@@ -238,7 +238,7 @@ func convertInDateFormate(inputDate string) time.Time {
 	}
 	return dateOfBirth
 }
-func UpdateUser(c *gin.Context) {
+func UpdateProfile(c *gin.Context) {
 	id := c.Param("id")
 	var existingUser models.Profile
 
@@ -261,8 +261,8 @@ func UpdateUser(c *gin.Context) {
 	c.JSON(http.StatusOK, existingUser)
 }
 
-func DeleteUser(c *gin.Context) {
-	fmt.Println("DeleteUser called")
+func DeleteProfile(c *gin.Context) {
+	fmt.Println("DeleteProfile called")
 	id := c.Param("id")
 	if err := database.DB.Delete(&models.Profile{}, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})

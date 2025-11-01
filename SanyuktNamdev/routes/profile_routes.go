@@ -11,12 +11,12 @@ func ProfileRoutes(router *gin.Engine) {
 	router.Static("/uploads", "./uploads")
 	userGroup := router.Group("/matrimonialProfiles")
 	{
-		userGroup.GET("/", controllers.GetUsers)
-		userGroup.GET("/:id", controllers.GetUserByID)
-		userGroup.GET("/byuserId/:id", controllers.GetProfileByUserID)
-		userGroup.POST("/", controllers.CreateUser)
-		userGroup.PUT("/:id", controllers.UpdateUser)
-		userGroup.DELETE("/:id", controllers.DeleteUser)
-		userGroup.POST("/upload/:id", controllers.UploadImageForUser)
+		userGroup.GET("/", controllers.GetProfiles)
+		userGroup.GET("/:id", controllers.GetProfileByID)
+		userGroup.GET("/byuserId/:id", controllers.GetProfilesByUserID)
+		userGroup.POST("/", controllers.CreateProfile)
+		userGroup.PUT("/:id", controllers.UpdateProfile)
+		userGroup.DELETE("/:id", controllers.DeleteProfile)
+		userGroup.POST("/upload/:id", controllers.UploadProfileImage)
 	}
 }
