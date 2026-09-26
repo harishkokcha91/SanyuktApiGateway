@@ -96,3 +96,30 @@ func isDuplicateDatabaseError(err error) bool {
 	// Check for pq error code if using github.com/lib/pq
 	err.Error() == fmt.Sprintf("pq: database \"%s\" already exists", os.Getenv("DB_NAME")))
 }
+
+// PrintAllTables prints all tables in the database
+func PrintAllTables() {
+	var tables []string
+	rows, err := DB.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema='public'").Rows()
+	if err != nil {
+		log.Fatal("Error querying tables: ", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tableName string
+		if err := rows.Scan(&tableName); err != nil {
+			log.Fatal("Error scanning row: ", err)
+		}
+		tables = append(tables, tableName)
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Fatal("Error after iteration: ", err)
+	}
+
+	fmt.Println("Tables in the database:")
+	for _, table := range tables {
+		fmt.Println(table)
+	}
+}
