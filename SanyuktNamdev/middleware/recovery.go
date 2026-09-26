@@ -34,7 +34,11 @@ func RecoveryMiddleware() gin.HandlerFunc {
 				}
 
 				// Log the panic with stack trace and request ID
-				utils.Logger.Printf("PANIC: request_id=%s error=%v\n%s", requestIDStr, err, debug.Stack())
+				utils.Logger.Error("PANIC recovered",
+					"request_id", requestIDStr,
+					"error", err,
+					"stack", string(debug.Stack()),
+				)
 
 				utils.RespondInternalError(c, "Internal server error")
 				c.Abort()

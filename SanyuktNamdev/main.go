@@ -1,21 +1,25 @@
 package main
 
 import (
+	"context"
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/middleware"
 	"SanyuktNamdev/routes"
 	"SanyuktNamdev/utils"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/joho/godotenv"
+	"log/slog"
 )
 
 func init() {
@@ -30,25 +34,35 @@ func main() {
 		port = "8081" // Default for local run
 	}
 
-	// Initialize Database
-	// config.InitDB()
+	// Initialize structured logger
+	isProduction := os.Getenv("ENV") == "production"
+	logger := middleware.NewLogger("sanyuktnamdev", isProduction)
+	slog.SetDefault(logger)
+
 	// Initialize Database
 	database.Connect()
+	defer func() {
+		if err := database.Close(); err != nil {
+			logger.Error("Failed to close database connection", "error", err)
+		}
+	}()
+
 	// Create Router
 	r := gin.New()
 
 	// Add middleware
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.Logger(logger))
 	r.Use(middleware.SecurityCORSMiddleware(middleware.DefaultCORSConfig()))
-	r.Use(middleware.SecurityHeaders(false)) // false = dev mode (no HSTS/SSL redirect)
+	r.Use(middleware.SecurityHeaders(isProduction))
 	r.Use(middleware.BodyLimitMiddleware())
 	r.Use(middleware.GlobalRateLimiter())
 
-	// Healthcheck route
-	r.GET("/healthcheck", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "AuthService is running"})
-	})
+	// Health check endpoints
+	r.GET("/healthz", healthCheck)
+	r.GET("/readyz", readyCheck)
+
 	routes.SetupAuthRoutes(r)
 	routes.AchievementRoutes(r)
 	routes.BusinessRoutes(r)
@@ -58,8 +72,58 @@ func main() {
 	// Route for image upload (requires auth)
 	r.POST("/upload", middleware.AuthMiddleware(), uploadImage)
 
-	log.Printf("Achievement service running on port %s", port)
-	r.Run(":" + port)
+	// Start server with graceful shutdown
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
+	}
+
+	// Run server in goroutine
+	go func() {
+		logger.Info("Achievement service running on port " + port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logger.Error("Failed to start server", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	logger.Info("Shutting down server...")
+
+	// Give in-flight requests 10 seconds to complete
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		logger.Error("Server forced to shutdown", "error", err)
+	}
+
+	logger.Info("Server exited")
+}
+
+// healthCheck checks if the service is healthy (DB connectivity)
+func healthCheck(c *gin.Context) {
+	ctx := c.Request.Context()
+	db := database.WithContext(ctx)
+	sqlDB, err := db.DB()
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": "database connection failed"})
+		return
+	}
+	if err := sqlDB.PingContext(ctx); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": "database ping failed"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "healthy"})
+}
+
+// readyCheck checks if the service is ready to serve traffic
+func readyCheck(c *gin.Context) {
+	// For now, ready = healthy
+	healthCheck(c)
 }
 
 // Max file size (2MB)

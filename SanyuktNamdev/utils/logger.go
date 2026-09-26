@@ -1,9 +1,18 @@
 package utils
 
 import (
-	"log"
+	"log/slog"
 	"os"
 )
 
-// Logger is the standard logger for the application
-var Logger = log.New(os.Stdout, "", log.LstdFlags|log.Lshortfile)
+// Logger is the structured logger for the application
+var Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+	Level: slog.LevelInfo,
+}))
+
+// SetLogLevel changes the log level at runtime
+func SetLogLevel(level slog.Level) {
+	Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+		Level: level,
+	}))
+}

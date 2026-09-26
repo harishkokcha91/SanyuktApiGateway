@@ -1,6 +1,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -59,4 +60,18 @@ func Connect() {
 	log.Println("✅ Connected to PostgreSQL")
 
 	DB = db
+}
+
+// WithContext returns a new DB instance with the given context for query tracing
+func WithContext(ctx context.Context) *gorm.DB {
+	return DB.WithContext(ctx)
+}
+
+// Close closes the database connection pool
+func Close() error {
+	sqlDB, err := DB.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
 }
