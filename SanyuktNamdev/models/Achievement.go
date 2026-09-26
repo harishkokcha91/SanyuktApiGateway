@@ -15,4 +15,10 @@ type Achievement struct {
 	CreatedAt         time.Time `json:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at"`
 	Status            string    `json:"status" gorm:"default:Pending" binding:"oneof=Pending Approved Rejected"`
+
+	// Approval audit fields
+	ApprovedBy  *uint      `json:"approved_by" gorm:"index"`
+	ApprovedAt  *time.Time `json:"approved_at"`
+	RejectedBy  *uint      `json:"rejected_by" gorm:"index"`
+	RejectedAt  *time.Time `json:"rejected_at"`
 }

@@ -26,4 +26,10 @@ type Event struct {
 	RegLink       string    `json:"registration_link" binding:"url"`
 	IsOnline      bool      `json:"is_online"`
 	TicketPrice   string    `json:"ticket_price" binding:"max=20"`
+
+	// Approval audit fields
+	ApprovedBy  *uint      `json:"approved_by" gorm:"index"`
+	ApprovedAt  *time.Time `json:"approved_at"`
+	RejectedBy  *uint      `json:"rejected_by" gorm:"index"`
+	RejectedAt  *time.Time `json:"rejected_at"`
 }

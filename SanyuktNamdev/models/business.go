@@ -1,6 +1,10 @@
 package models
 
-import "gorm.io/gorm"
+import (
+	"time"
+
+	"gorm.io/gorm"
+)
 
 type Business struct {
 	gorm.Model
@@ -24,4 +28,10 @@ type Business struct {
 	OpeningHours   string   `json:"opening_hours" binding:"max=100"`
 	HomeDelivery   bool     `json:"home_delivery"`
 	PaymentMethods []string `gorm:"type:text" json:"payment_methods"`
+
+	// Approval audit fields
+	ApprovedBy  *uint      `json:"approved_by" gorm:"index"`
+	ApprovedAt  *time.Time `json:"approved_at"`
+	RejectedBy  *uint      `json:"rejected_by" gorm:"index"`
+	RejectedAt  *time.Time `json:"rejected_at"`
 }

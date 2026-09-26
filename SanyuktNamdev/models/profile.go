@@ -32,6 +32,12 @@ type Profile struct {
 	Status           string `json:"status" binding:"required,oneof=pending active inactive"`
 	PhoneNumbers     string `json:"phoneNumbers" binding:"required,max=20"`
 
+	// Approval audit fields
+	ApprovedBy  *uint      `json:"approved_by" gorm:"index"`
+	ApprovedAt  *time.Time `json:"approved_at"`
+	RejectedBy  *uint      `json:"rejected_by" gorm:"index"`
+	RejectedAt  *time.Time `json:"rejected_at"`
+
 	// Auto-managed timestamps
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"createdAt"`
 	UpdatedAt time.Time `gorm:"autoUpdateTime" json:"updatedAt"`
