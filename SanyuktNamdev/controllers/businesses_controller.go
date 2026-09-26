@@ -82,6 +82,8 @@ func CreateBusiness(c *gin.Context) {
 		return
 	}
 
+	// Force Pending status - ignore any client-provided status
+	business.Status = "Pending"
 	business.CreatedAt = time.Now()
 	business.UpdatedAt = time.Now()
 

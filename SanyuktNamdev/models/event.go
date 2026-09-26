@@ -19,7 +19,7 @@ type Event struct {
 	Category      string    `json:"category" binding:"required,max=50"`
 	Capacity      string    `json:"capacity" binding:"max=20"`
 	Attendees     string    `json:"attendees_registered" binding:"max=20"`
-	Status        string    `json:"status" gorm:"default:'Pending'" binding:"required,oneof=Pending Upcoming Completed Cancelled"`
+	Status        string    `json:"status" gorm:"default:'Pending'" binding:"omitempty,oneof=Pending Upcoming Completed Cancelled"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	Image         string    `json:"image"`

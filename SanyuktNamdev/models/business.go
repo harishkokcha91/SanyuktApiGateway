@@ -23,7 +23,7 @@ type Business struct {
 	Country        string   `json:"country" binding:"required,max=100"`
 	Website        string   `json:"website" binding:"omitempty,url"`
 	Image          string   `json:"image"`
-	Status         string   `json:"status" gorm:"default:'Pending'" binding:"required,oneof=Pending Approved Rejected"`
+	Status         string   `json:"status" gorm:"default:'Pending'" binding:"omitempty,oneof=Pending Approved Rejected"`
 	IsVerified     bool     `json:"is_verified" gorm:"default:false"`
 	OpeningHours   string   `json:"opening_hours" binding:"max=100"`
 	HomeDelivery   bool     `json:"home_delivery"`

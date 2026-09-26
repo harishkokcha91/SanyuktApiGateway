@@ -81,6 +81,8 @@ func CreateEvent(c *gin.Context) {
 		return
 	}
 
+	// Force Pending status - ignore any client-provided status
+	event.Status = "Pending"
 	event.CreatedAt = time.Now()
 	event.UpdatedAt = time.Now()
 

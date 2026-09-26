@@ -18,6 +18,10 @@ func CreateAchievement(c *gin.Context) {
 		utils.RespondValidationError(c, err.Error())
 		return
 	}
+
+	// Force Pending status - ignore any client-provided status
+	achievement.Status = "Pending"
+
 	if err := initializers.DB.Create(&achievement).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
