@@ -55,7 +55,7 @@ func Login(c *gin.Context) {
 	}
 	// Generate JWT Token
 	userIDStr := fmt.Sprintf("%d", user.ID)
-	token, err := utils.GenerateToken(userIDStr)
+	token, err := utils.GenerateToken(userIDStr, user.Role)
 	if err != nil {
 		utils.RespondInternalError(c, "Failed to generate token")
 		return
@@ -96,6 +96,14 @@ func RegisterUserIfExistReturnUser(c *gin.Context) {
 		return
 	}
 
+	// Generate JWT Token for the new user
+	userIDStr := fmt.Sprintf("%d", user.ID)
+	token, err := utils.GenerateToken(userIDStr, user.Role)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to generate token")
+		return
+	}
+
 	// Return success response for newly registered user
-	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully", "user": user})
+	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully", "user": user, "token": token})
 }

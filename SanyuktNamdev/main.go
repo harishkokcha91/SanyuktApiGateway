@@ -50,8 +50,8 @@ func main() {
 	routes.EventRoutes(r)
 	routes.UserRoutes(r)
 	routes.ProfileRoutes(r)
-	// Route for image upload
-	r.POST("/upload", uploadImage)
+	// Route for image upload (requires auth)
+	r.POST("/upload", middleware.AuthMiddleware(), uploadImage)
 
 	log.Printf("Achievement service running on port %s", port)
 	r.Run(":" + port)

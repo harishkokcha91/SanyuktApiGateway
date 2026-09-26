@@ -17,6 +17,7 @@ type User struct {
 	Image        string `json:"image"`
 	PhoneNumbers string `json:"phoneNumbers"`
 	Status       string `json:"status"`
+	Role         string `gorm:"default:'user'" json:"role"`
 }
 
 type UserProfile struct {

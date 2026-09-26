@@ -26,9 +26,13 @@ func init() {
 }
 
 // GenerateToken creates a new JWT token for a user
-func GenerateToken(userId string) (string, error) {
+func GenerateToken(userId string, role string) (string, error) {
+	if role == "" {
+		role = "user"
+	}
 	claims := jwt.MapClaims{
 		"userid": userId,
+		"role":   role,
 		"exp":    time.Now().Add(24 * time.Hour).Unix(),
 		"iat":    time.Now().Unix(),
 	}

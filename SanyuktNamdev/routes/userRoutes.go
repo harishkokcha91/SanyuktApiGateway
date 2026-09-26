@@ -2,12 +2,14 @@ package routes
 
 import (
 	"SanyuktNamdev/controllers"
+	"SanyuktNamdev/middleware"
 
 	"github.com/gin-gonic/gin"
 )
 
 func UserRoutes(r *gin.Engine) {
 	userRoutes := r.Group("/users")
+	userRoutes.Use(middleware.AuthMiddleware())
 	{
 		userRoutes.GET("/", controllers.GetUsers)
 		userRoutes.GET("/:id", controllers.GetUserByID)

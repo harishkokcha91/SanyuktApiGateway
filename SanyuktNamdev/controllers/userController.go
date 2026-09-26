@@ -4,6 +4,7 @@ import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
 	"SanyuktNamdev/utils"
+	"fmt"
 	"math"
 	"net/http"
 	"strconv"
@@ -66,6 +67,19 @@ func GetUserByID(c *gin.Context) {
 		utils.RespondNotFound(c, "User not found")
 		return
 	}
+
+	// Ownership check: only the user themselves can view
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", user.ID) != userIDStr {
+		utils.RespondForbidden(c, "You can only view your own user record")
+		return
+	}
+
 	c.JSON(http.StatusOK, user)
 }
 
@@ -92,6 +106,18 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// Ownership check: only the user themselves can update
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", user.ID) != userIDStr {
+		utils.RespondForbidden(c, "You can only update your own user record")
+		return
+	}
+
 	if err := c.ShouldBindJSON(&user); err != nil {
 		utils.RespondValidationError(c, err.Error())
 		return
@@ -106,6 +132,26 @@ func UpdateUser(c *gin.Context) {
 
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
+	var user models.User
+
+	// Fetch user first for ownership check
+	if err := database.DB.First(&user, id).Error; err != nil {
+		utils.RespondNotFound(c, "User not found")
+		return
+	}
+
+	// Ownership check: only the user themselves can delete
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", user.ID) != userIDStr {
+		utils.RespondForbidden(c, "You can only delete your own user record")
+		return
+	}
+
 	if err := database.DB.Delete(&models.User{}, id).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return

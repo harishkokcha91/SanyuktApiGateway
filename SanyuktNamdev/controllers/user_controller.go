@@ -69,9 +69,22 @@ func GetProfileByID(c *gin.Context) {
 	id := c.Param("id")
 	var user models.Profile
 	if err := database.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondNotFound(c, "User not found")
 		return
 	}
+
+	// Ownership check: only the profile owner can view
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", user.UserId) != userIDStr {
+		utils.RespondForbidden(c, "You can only view your own profile")
+		return
+	}
+
 	c.JSON(http.StatusOK, user)
 }
 
@@ -80,6 +93,18 @@ func GetProfilesByUserID(c *gin.Context) {
 	id := c.Param("id") // Get user ID from the URL
 	var users []models.Profile
 
+	// Ownership check: only the profile owner can view their profiles
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if id != userIDStr {
+		utils.RespondForbidden(c, "You can only view your own profiles")
+		return
+	}
+
 	// Get the page and limit from the query parameters
 	page := c.DefaultQuery("page", "1")    // Default page to 1 if not provided
 	limit := c.DefaultQuery("limit", "10") // Default limit to 10 if not provided
@@ -87,13 +112,13 @@ func GetProfilesByUserID(c *gin.Context) {
 	// Convert page and limit to integers
 	pageInt, err := strconv.Atoi(page)
 	if err != nil || pageInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		utils.RespondValidationError(c, "Invalid page number")
 		return
 	}
 
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil || limitInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+		utils.RespondValidationError(c, "Invalid limit")
 		return
 	}
 
@@ -102,20 +127,20 @@ func GetProfilesByUserID(c *gin.Context) {
 
 	// Fetch the profiles from the database with pagination
 	if err := database.DB.Where("user_id = ?", id).Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch profiles"})
+		utils.RespondInternalError(c, "Failed to fetch profiles")
 		return
 	}
 
 	// If no profiles are found, return a "not found" response
 	if len(users) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondNotFound(c, "User not found")
 		return
 	}
 
 	// Get the total number of matching records
 	var totalRecords int64
 	if err := database.DB.Model(&models.Profile{}).Where("user_id = ?", id).Count(&totalRecords).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total records"})
+		utils.RespondInternalError(c, "Failed to fetch total records")
 		return
 	}
 
@@ -138,6 +163,15 @@ func CreateProfile(c *gin.Context) {
 		utils.RespondValidationError(c, err.Error())
 		return
 	}
+
+	// Set UserId from authenticated user
+	authUserID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	user.UserId = authUserID.(uint)
+
 	user.Status = "pending"
 	if err := database.DB.Create(&user).Error; err != nil {
 		utils.RespondDBError(c, err)
@@ -151,11 +185,24 @@ func UploadProfileImage(c *gin.Context) {
 	// Get user ID from URL params
 	userID := c.Param("id")
 	fmt.Println(userID)
+
+	// Ownership check: only the profile owner can upload image
+	authUserID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	authUserIDStr := fmt.Sprintf("%v", authUserID)
+	if userID != authUserIDStr {
+		utils.RespondForbidden(c, "You can only upload image for your own profile")
+		return
+	}
+
 	// Upload the image
 	imagePath, err := UploadImageForProfile(c, userID)
 	if err != nil {
 		fmt.Println("err ", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.RespondInternalError(c, err.Error())
 		return
 	}
 
@@ -217,8 +264,16 @@ func CreateProfileWithImage(c *gin.Context) {
 	user.DateOfBirth = c.PostForm("dateOfBirth")
 	user.BirthPlace = c.PostForm("birthPlace")
 
+	// Set UserId from authenticated user
+	authUserID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	user.UserId = authUserID.(uint)
+
 	// Upload image
-	imagePath, err := UploadImageForProfile(c, user.Name)
+	imagePath, err := UploadImageForProfile(c, fmt.Sprintf("%d", user.UserId))
 	if err != nil {
 		utils.RespondInternalError(c, err.Error())
 		return
@@ -254,6 +309,18 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
+	// Ownership check: only the profile owner can update
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", existingUser.UserId) != userIDStr {
+		utils.RespondForbidden(c, "You can only update your own profile")
+		return
+	}
+
 	// Create a new struct to hold updates
 	var updatedData models.Profile
 	if err := c.ShouldBindJSON(&updatedData); err != nil {
@@ -273,8 +340,28 @@ func UpdateProfile(c *gin.Context) {
 func DeleteProfile(c *gin.Context) {
 	fmt.Println("DeleteProfile called")
 	id := c.Param("id")
+	var existingUser models.Profile
+
+	// Fetch the existing user
+	if err := database.DB.First(&existingUser, id).Error; err != nil {
+		utils.RespondNotFound(c, "User not found")
+		return
+	}
+
+	// Ownership check: only the profile owner can delete
+	userID, exists := c.Get("userid")
+	if !exists {
+		utils.RespondUnauthorized(c, "User ID not found in token")
+		return
+	}
+	userIDStr := fmt.Sprintf("%v", userID)
+	if fmt.Sprintf("%d", existingUser.UserId) != userIDStr {
+		utils.RespondForbidden(c, "You can only delete your own profile")
+		return
+	}
+
 	if err := database.DB.Delete(&models.Profile{}, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondDBError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
