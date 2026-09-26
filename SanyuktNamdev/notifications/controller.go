@@ -99,7 +99,7 @@ func (c *Controller) GetUnreadCount(ginCtx *gin.Context) {
 	ginCtx.JSON(http.StatusOK, gin.H{"unread_count": count})
 }
 
-// MarkAsRead handles PATCH /notifications/:id/read
+// MarkAsRead handles PATCH /notifications/:id/read and PATCH /notifications/:id/mark-read
 func (c *Controller) MarkAsRead(ginCtx *gin.Context) {
 	userID, exists := ginCtx.Get("userid")
 	if !exists {
@@ -131,6 +131,50 @@ func (c *Controller) MarkAsRead(ginCtx *gin.Context) {
 	}
 
 	ginCtx.JSON(http.StatusOK, gin.H{"message": "Notification marked as read"})
+}
+
+// SendTestNotification handles POST /notifications/test (admin only)
+func (c *Controller) SendTestNotification(ginCtx *gin.Context) {
+	// Verify admin role
+	role, exists := ginCtx.Get("role")
+	if !exists || role != "admin" {
+		utils.RespondForbidden(ginCtx, "Admin access required")
+		return
+	}
+
+	var req struct {
+		UserID  uint   `json:"user_id" binding:"required"`
+		Type    string `json:"type" binding:"required"`
+		Message string `json:"message" binding:"required"`
+		Channel string `json:"channel" binding:"required"`
+	}
+
+	if err := ginCtx.ShouldBindJSON(&req); err != nil {
+		utils.RespondValidationError(ginCtx, err.Error())
+		return
+	}
+
+	// Validate channel
+	validChannels := map[string]bool{
+		string(models.ChannelInApp): true,
+		string(models.ChannelEmail): true,
+		string(models.ChannelPush):  true,
+	}
+	if !validChannels[req.Channel] {
+		utils.RespondValidationError(ginCtx, "Invalid channel: must be 'in-app', 'email', or 'push'")
+		return
+	}
+
+	notification, err := c.service.QueueNotification(req.UserID, req.Type, models.NotificationChannel(req.Channel), req.Message)
+	if err != nil {
+		utils.RespondInternalError(ginCtx, "Failed to create test notification")
+		return
+	}
+
+	ginCtx.JSON(http.StatusCreated, gin.H{
+		"message":      "Test notification sent",
+		"notification": notification,
+	})
 }
 
 // MarkAllAsRead handles PATCH /notifications/read-all
@@ -166,6 +210,14 @@ func RegisterRoutes(r *gin.Engine, service *Service) {
 		protected.GET("/notifications", controller.GetNotifications)
 		protected.GET("/notifications/unread-count", controller.GetUnreadCount)
 		protected.PATCH("/notifications/:id/read", controller.MarkAsRead)
+		protected.PATCH("/notifications/:id/mark-read", controller.MarkAsRead)
 		protected.PATCH("/notifications/read-all", controller.MarkAllAsRead)
+
+		// Admin-only test endpoint
+		adminOnly := protected.Group("/")
+		adminOnly.Use(middleware.RequireRole("admin"))
+		{
+			adminOnly.POST("/notifications/test", controller.SendTestNotification)
+		}
 	}
 }
