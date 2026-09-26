@@ -108,10 +108,10 @@ func TestEventAdminOnlyEnforcement(t *testing.T) {
 		{"GET event by ID - admin", http.MethodGet, "/events/1", adminToken, "", http.StatusOK},
 
 		// Admin write - user should be forbidden
-		{"POST event - user", http.MethodPost, "/events/", userToken, `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"upcoming"}`, http.StatusForbidden},
-		{"POST event - admin", http.MethodPost, "/events/", adminToken, `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"upcoming"}`, http.StatusCreated},
-		{"PUT event - user", http.MethodPut, "/events/1", userToken, `{"name":"Updated Event"}`, http.StatusForbidden},
-		{"PUT event - admin", http.MethodPut, "/events/1", adminToken, `{"name":"Updated Event"}`, http.StatusOK},
+		{"POST event - user", http.MethodPost, "/events/", userToken, `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`, http.StatusForbidden},
+		{"POST event - admin", http.MethodPost, "/events/", adminToken, `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`, http.StatusCreated},
+		{"PUT event - user", http.MethodPut, "/events/1", userToken, `{"name":"Updated Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`, http.StatusForbidden},
+		{"PUT event - admin", http.MethodPut, "/events/1", adminToken, `{"name":"Updated Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`, http.StatusOK},
 		{"DELETE event - user", http.MethodDelete, "/events/1", userToken, "", http.StatusForbidden},
 		{"DELETE event - admin", http.MethodDelete, "/events/1", adminToken, "", http.StatusOK},
 	}
@@ -162,10 +162,10 @@ func TestBusinessAdminOnlyEnforcement(t *testing.T) {
 		{"GET business by ID - admin", http.MethodGet, "/businesses/1", adminToken, "", http.StatusOK},
 
 		// Admin write
-		{"POST business - user", http.MethodPost, "/businesses/", userToken, `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country"}`, http.StatusForbidden},
-		{"POST business - admin", http.MethodPost, "/businesses/", adminToken, `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country"}`, http.StatusCreated},
-		{"PUT business - user", http.MethodPut, "/businesses/1", userToken, `{"name":"Updated Business"}`, http.StatusForbidden},
-		{"PUT business - admin", http.MethodPut, "/businesses/1", adminToken, `{"name":"Updated Business"}`, http.StatusOK},
+		{"POST business - user", http.MethodPost, "/businesses/", userToken, `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`, http.StatusForbidden},
+		{"POST business - admin", http.MethodPost, "/businesses/", adminToken, `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`, http.StatusCreated},
+		{"PUT business - user", http.MethodPut, "/businesses/1", userToken, `{"name":"Updated Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`, http.StatusForbidden},
+		{"PUT business - admin", http.MethodPut, "/businesses/1", adminToken, `{"name":"Updated Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`, http.StatusOK},
 		{"DELETE business - user", http.MethodDelete, "/businesses/1", userToken, "", http.StatusForbidden},
 		{"DELETE business - admin", http.MethodDelete, "/businesses/1", adminToken, "", http.StatusOK},
 	}
@@ -314,8 +314,8 @@ func TestAdminEnforcement_TableDriven(t *testing.T) {
 			},
 			listPath:   "/events/",
 			detailPath: "/events/1",
-			createBody: `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"upcoming"}`,
-			updateBody: `{"name":"Updated Event"}`,
+			createBody: `{"name":"Test Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`,
+			updateBody: `{"name":"Updated Event","event_date":"2025-12-31","venue":"Test Venue","city":"Test City","state":"Test State","country":"Test Country","organizer":"Test Organizer","email":"organizer@test.com","category":"Tech","status":"Upcoming"}`,
 		},
 		{
 			resource: "businesses",
@@ -324,8 +324,8 @@ func TestAdminEnforcement_TableDriven(t *testing.T) {
 			},
 			listPath:   "/businesses/",
 			detailPath: "/businesses/1",
-			createBody: `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country"}`,
-			updateBody: `{"name":"Updated Business"}`,
+			createBody: `{"name":"Test Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`,
+			updateBody: `{"name":"Updated Business","category":"Restaurant","owner":"Test Owner","email":"owner@test.com","location":"Test Location","city":"Test City","state":"Test State","country":"Test Country","status":"Approved"}`,
 		},
 		{
 			resource: "achievements",
@@ -334,8 +334,8 @@ func TestAdminEnforcement_TableDriven(t *testing.T) {
 			},
 			listPath:   "/achievements/",
 			detailPath: "/achievements/1",
-			createBody: `{"name":"Test Achievement","achievement_type":"Academic","achievement":"Test Achievement Detail","date_of_achievement":"2025-01-01","status":"Pending"}`,
-			updateBody: `{"name":"Updated Achievement"}`,
+			createBody: `{"name":"Test Achievement","achievement_type":"Academic","achievement":"Test Achievement Detail","date_of_achievement":"2025-01-01","status":"Approved"}`,
+			updateBody: `{"name":"Updated Achievement","achievement_type":"Academic","achievement":"Test Achievement Detail","date_of_achievement":"2025-01-01","status":"Approved"}`,
 		},
 	}
 

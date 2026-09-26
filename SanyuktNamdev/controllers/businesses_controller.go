@@ -20,13 +20,16 @@ func GetBusinesses(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	offset := (page - 1) * limit
 
-	if err := initializers.DB.Offset(offset).Limit(limit).Find(&businesses).Error; err != nil {
+	// Apply public status filter - only show approved businesses to public
+	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "business")
+
+	if err := query.Offset(offset).Limit(limit).Find(&businesses).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch businesses")
 		return
 	}
 
 	var totalRecords int64
-	if err := initializers.DB.Model(&models.Business{}).Count(&totalRecords).Error; err != nil {
+	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Business{}), "business").Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to count businesses")
 		return
 	}
@@ -47,7 +50,22 @@ func GetBusinessByID(c *gin.Context) {
 	id := c.Param("id")
 	var business models.Business
 
+	// First, try to find the business without status filter to check ownership
 	if err := initializers.DB.First(&business, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
+		return
+	}
+
+	// Check if user is admin
+	userRole, hasRole := c.Get("role")
+	if hasRole && userRole == "admin" {
+		c.JSON(http.StatusOK, business)
+		return
+	}
+
+	// For business, there's no direct owner field like profiles
+	// Public users can only see Approved businesses
+	if business.Status != "Approved" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
 		return
 	}

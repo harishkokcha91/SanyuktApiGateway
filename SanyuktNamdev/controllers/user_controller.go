@@ -41,15 +41,18 @@ func GetProfiles(c *gin.Context) {
 	// Calculate the offset based on the page number
 	offset := (pageInt - 1) * limitInt
 
+	// Apply public status filter - only show approved/active profiles to public
+	query := utils.GetQueryWithPublicStatus(c, database.DB, "profile")
+
 	// Fetch the data from the database with pagination
-	if err := database.DB.Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
+	if err := query.Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
 	}
 
-	// Get the total number of records
+	// Get the total number of records (with filter applied)
 	var totalRecords int64
-	if err := database.DB.Model(&models.Profile{}).Count(&totalRecords).Error; err != nil {
+	if err := utils.GetQueryWithPublicStatus(c, database.DB.Model(&models.Profile{}), "profile").Count(&totalRecords).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total records"})
 		return
 	}
@@ -70,12 +73,21 @@ func GetProfiles(c *gin.Context) {
 func GetProfileByID(c *gin.Context) {
 	id := c.Param("id")
 	var user models.Profile
+
+	// First, try to find the profile without status filter to check ownership
 	if err := database.DB.First(&user, id).Error; err != nil {
 		utils.RespondNotFound(c, "User not found")
 		return
 	}
 
-	// Ownership check: only the profile owner can view
+	// Check if user is admin
+	userRole, hasRole := c.Get("role")
+	if hasRole && userRole == "admin" {
+		c.JSON(http.StatusOK, user)
+		return
+	}
+
+	// Check if user is the owner
 	userID, exists := c.Get("userid")
 	if !exists {
 		utils.RespondUnauthorized(c, "User ID not found in token")
@@ -83,8 +95,11 @@ func GetProfileByID(c *gin.Context) {
 	}
 	userIDStr := fmt.Sprintf("%v", userID)
 	if fmt.Sprintf("%d", user.UserId) != userIDStr {
-		utils.RespondForbidden(c, "You can only view your own profile")
-		return
+		// Not owner - check if profile is public (active)
+		if user.Status != "active" {
+			utils.RespondNotFound(c, "User not found")
+			return
+		}
 	}
 
 	c.JSON(http.StatusOK, user)

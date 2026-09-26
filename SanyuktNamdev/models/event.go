@@ -23,7 +23,7 @@ type Event struct {
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	Image         string    `json:"image"`
-	RegLink       string    `json:"registration_link" binding:"url"`
+	RegLink       string    `json:"registration_link" binding:"omitempty,url"`
 	IsOnline      bool      `json:"is_online"`
 	TicketPrice   string    `json:"ticket_price" binding:"max=20"`
 

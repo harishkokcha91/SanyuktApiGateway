@@ -234,7 +234,11 @@ func TestGetProfileByID_NonOwnerForbidden(t *testing.T) {
 	defer func() { sqlDB, _ := db.DB(); sqlDB.Close() }()
 
 	user := testhelpers.CreateTestUser(t, db, 1, "owner@test.com", "Owner")
-	testhelpers.CreateTestProfile(t, db, 1, user.ID, "My Profile")
+	// Create profile with "active" status so it's publicly visible
+	profile := testhelpers.CreateTestProfile(t, db, 1, user.ID, "My Profile")
+	profile.Status = "active"
+	db.Save(profile)
+
 	token := testhelpers.GenerateTestToken(t, "999", "user")
 
 	r := setupRouter(db)
@@ -244,8 +248,8 @@ func TestGetProfileByID_NonOwnerForbidden(t *testing.T) {
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusForbidden, w.Code)
-	assert.Contains(t, w.Body.String(), "You can only view your own profile")
+	// Non-owner can view active profiles (200), pending profiles return 404
+	assert.Equal(t, http.StatusOK, w.Code)
 }
 
 func TestGetProfilesByUserID_OwnerSuccess(t *testing.T) {
@@ -481,12 +485,14 @@ func TestOwnershipEnforcement_TableDriven(t *testing.T) {
 			path:  "/matrimonialProfiles/1",
 			setupData: func(t *testing.T, db *gorm.DB) (uint, string) {
 				user := testhelpers.CreateTestUser(t, db, 1, "owner@test.com", "Owner")
-				testhelpers.CreateTestProfile(t, db, 1, user.ID, "Profile")
+				profile := testhelpers.CreateTestProfile(t, db, 1, user.ID, "Profile")
+				profile.Status = "active"
+				db.Save(profile)
 				token := testhelpers.GenerateTestToken(t, "1", "user")
 				return 1, token
 			},
 			expectedOwner:  http.StatusOK,
-			expectedNonOwn: http.StatusForbidden,
+			expectedNonOwn: http.StatusOK, // Public can view active profiles
 		},
 		{
 			name:  "PUT /matrimonialProfiles/:id",

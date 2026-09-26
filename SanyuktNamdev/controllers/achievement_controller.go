@@ -48,15 +48,18 @@ func GetAchievements(c *gin.Context) {
 	// Calculate offset for pagination
 	offset := (pageInt - 1) * limitInt
 
+	// Apply public status filter - only show approved achievements to public
+	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "achievement")
+
 	// Fetch paginated achievements
-	if err := initializers.DB.Offset(offset).Limit(limitInt).Find(&achievements).Error; err != nil {
+	if err := query.Offset(offset).Limit(limitInt).Find(&achievements).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch achievements")
 		return
 	}
 
 	// Get the total number of records
 	var totalRecords int64
-	if err := initializers.DB.Model(&models.Achievement{}).Count(&totalRecords).Error; err != nil {
+	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Achievement{}), "achievement").Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch total records")
 		return
 	}
@@ -79,6 +82,19 @@ func GetAchievementByID(c *gin.Context) {
 	id := c.Param("id")
 	var achievement models.Achievement
 	if err := initializers.DB.First(&achievement, id).Error; err != nil {
+		utils.RespondNotFound(c, "Achievement not found")
+		return
+	}
+
+	// Check if user is admin
+	userRole, hasRole := c.Get("role")
+	if hasRole && userRole == "admin" {
+		c.JSON(http.StatusOK, achievement)
+		return
+	}
+
+	// Public users can only see Approved achievements
+	if achievement.Status != "Approved" {
 		utils.RespondNotFound(c, "Achievement not found")
 		return
 	}

@@ -115,7 +115,7 @@ func CreateTestEvent(t *testing.T, db *gorm.DB, id uint) *models.Event {
 		Organizer:   "Test Organizer",
 		Email:       "organizer@test.com",
 		Category:    "Tech",
-		Status:      "upcoming",
+		Status:      "Approved",
 	}
 	event.ID = id
 	err := db.Create(event).Error
@@ -136,7 +136,7 @@ func CreateTestBusiness(t *testing.T, db *gorm.DB, id uint) *models.Business {
 		City:        "Test City",
 		State:       "Test State",
 		Country:     "Test Country",
-		Status:      "Active",
+		Status:      "Approved",
 	}
 	business.ID = id
 	err := db.Create(business).Error
@@ -153,7 +153,7 @@ func CreateTestAchievement(t *testing.T, db *gorm.DB, id uint) *models.Achieveme
 		Achievement:       "Test Achievement Detail",
 		Description:       "Test Description",
 		DateOfAchievement: "2025-01-01",
-		Status:            "Pending",
+		Status:            "Approved",
 	}
 	achievement.ID = id
 	err := db.Create(achievement).Error

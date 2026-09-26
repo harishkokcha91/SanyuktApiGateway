@@ -20,13 +20,16 @@ func GetEvents(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 	offset := (page - 1) * limit
 
-	if err := initializers.DB.Offset(offset).Limit(limit).Find(&events).Error; err != nil {
+	// Apply public status filter - only show approved events to public
+	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "event")
+
+	if err := query.Offset(offset).Limit(limit).Find(&events).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch events")
 		return
 	}
 
 	var totalRecords int64
-	if err := initializers.DB.Model(&models.Event{}).Count(&totalRecords).Error; err != nil {
+	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Event{}), "event").Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to count events")
 		return
 	}
@@ -47,7 +50,21 @@ func GetEventByID(c *gin.Context) {
 	id := c.Param("id")
 	var event models.Event
 
+	// First, try to find the event without status filter to check ownership
 	if err := initializers.DB.First(&event, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+		return
+	}
+
+	// Check if user is admin
+	userRole, hasRole := c.Get("role")
+	if hasRole && userRole == "admin" {
+		c.JSON(http.StatusOK, event)
+		return
+	}
+
+	// Public users can only see Approved events
+	if event.Status != "Approved" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
 		return
 	}

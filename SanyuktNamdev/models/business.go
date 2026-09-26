@@ -21,7 +21,7 @@ type Business struct {
 	State          string   `json:"state" binding:"required,max=100"`
 	ZipCode        string   `json:"zip_code" binding:"max=20"`
 	Country        string   `json:"country" binding:"required,max=100"`
-	Website        string   `json:"website" binding:"url"`
+	Website        string   `json:"website" binding:"omitempty,url"`
 	Image          string   `json:"image"`
 	Status         string   `json:"status" gorm:"default:'Pending'" binding:"required,oneof=Pending Approved Rejected"`
 	IsVerified     bool     `json:"is_verified" gorm:"default:false"`
