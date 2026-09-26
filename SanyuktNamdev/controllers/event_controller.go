@@ -103,13 +103,84 @@ func UpdateEvent(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBindJSON(&event); err != nil {
+	// Get current user info from context
+	userRole, hasUserRole := c.Get("role")
+
+	// Ownership check: Event doesn't have a direct owner field
+	// For now, only admins can update events
+	// If we add an organizer/owner field later, we can add ownership check here
+	isAdmin := hasUserRole && userRole == "admin"
+	if !isAdmin {
+		utils.RespondForbidden(c, "Admin access required to update event")
+		return
+	}
+
+	var updatedData models.Event
+	if err := c.ShouldBindJSON(&updatedData); err != nil {
 		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
+	// Owner edit on Approved record -> reset to Pending
+	// Event uses "Approved" as approved status, "Pending" as pending status
+	isApproved := event.Status == "Approved"
+
+	// Prevent non-admins from directly setting status to Approved/Rejected
+	if !isAdmin {
+		if updatedData.Status == "Approved" || updatedData.Status == "Rejected" {
+			updatedData.Status = event.Status
+		}
+	}
+
 	event.UpdatedAt = time.Now()
-	if err := initializers.DB.Save(&event).Error; err != nil {
+	// Preserve audit fields if status is being reset by owner
+	if !isAdmin && isApproved {
+		updatedData.Status = "Pending"
+		updatedData.ApprovedBy = nil
+		updatedData.ApprovedAt = nil
+		// Preserve RejectedBy/RejectedAt if previously rejected
+	}
+
+	// Build update map to handle pointer fields correctly
+	// Only include audit fields when owner resets to pending
+	shouldResetToPending := !isAdmin && isApproved
+	updates := map[string]interface{}{
+		"name":                 updatedData.Name,
+		"description":          updatedData.Description,
+		"event_date":           updatedData.EventDate,
+		"venue":                updatedData.Venue,
+		"address":              updatedData.Address,
+		"city":                 updatedData.City,
+		"state":                updatedData.State,
+		"zip_code":             updatedData.ZipCode,
+		"country":              updatedData.Country,
+		"organizer":            updatedData.Organizer,
+		"email":                updatedData.Email,
+		"phone":                updatedData.Phone,
+		"category":             updatedData.Category,
+		"capacity":             updatedData.Capacity,
+		"attendees":            updatedData.Attendees,
+		"status":               updatedData.Status,
+		"image":                updatedData.Image,
+		"reg_link":             updatedData.RegLink,
+		"is_online":            updatedData.IsOnline,
+		"ticket_price":         updatedData.TicketPrice,
+	}
+
+	// Only include audit fields in updates when owner resets to pending
+	if shouldResetToPending {
+		updates["approved_by"] = nil
+		updates["approved_at"] = nil
+		// RejectedBy/RejectedAt are preserved (not included in updates)
+	}
+
+	if err := initializers.DB.Model(&event).Updates(updates).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
+
+	// Re-fetch to return updated data
+	if err := initializers.DB.First(&event, id).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
@@ -198,4 +199,12 @@ func AssertErrorResponse(t *testing.T, w *httptest.ResponseRecorder, expectedCod
 	t.Helper()
 	AssertStatus(t, w, expectedCode)
 	require.Contains(t, w.Body.String(), containsMsg)
+}
+
+// ParseTime parses a time string in RFC3339 format for test data
+func ParseTime(t *testing.T, timeStr string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.RFC3339, timeStr)
+	require.NoError(t, err)
+	return parsed
 }

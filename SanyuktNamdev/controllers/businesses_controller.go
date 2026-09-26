@@ -104,13 +104,88 @@ func UpdateBusiness(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBindJSON(&business); err != nil {
+	// Get current user info from context
+	userRole, hasUserRole := c.Get("role")
+
+	// Ownership check: Business doesn't have a direct owner field
+	// For now, only admins can update businesses
+	// If we add an owner field later, we can add ownership check here
+	isAdmin := hasUserRole && userRole == "admin"
+	if !isAdmin {
+		// For non-admins, we could check if they are the "owner" via a field
+		// Currently, only admins can update
+		utils.RespondForbidden(c, "Admin access required to update business")
+		return
+	}
+
+	var updatedData models.Business
+	if err := c.ShouldBindJSON(&updatedData); err != nil {
 		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
+	// Owner edit on Approved record -> reset to Pending
+	// Business uses "Approved" as approved status, "Pending" as pending status
+	isApproved := business.Status == "Approved"
+	// Since only admins can update, this logic applies if we add ownership later
+	// For now, admin edits don't reset status
+
+	// Prevent non-admins from directly setting status to Approved/Rejected
+	if !isAdmin {
+		if updatedData.Status == "Approved" || updatedData.Status == "Rejected" {
+			updatedData.Status = business.Status
+		}
+	}
+
 	business.UpdatedAt = time.Now()
-	if err := initializers.DB.Save(&business).Error; err != nil {
+	// Preserve audit fields if status is being reset by owner
+	if !isAdmin && isApproved {
+		updatedData.Status = "Pending"
+		updatedData.ApprovedBy = nil
+		updatedData.ApprovedAt = nil
+		// Preserve RejectedBy/RejectedAt if previously rejected
+	}
+
+	// Build update map to handle pointer fields correctly
+	// Only include audit fields when owner resets to pending
+	shouldResetToPending := !isAdmin && isApproved
+	updates := map[string]interface{}{
+		"name":             updatedData.Name,
+		"category":         updatedData.Category,
+		"description":      updatedData.Description,
+		"owner":            updatedData.Owner,
+		"email":            updatedData.Email,
+		"phone":            updatedData.Phone,
+		"whats_app":        updatedData.WhatsApp,
+		"location":         updatedData.Location,
+		"address":          updatedData.Address,
+		"city":             updatedData.City,
+		"state":            updatedData.State,
+		"zip_code":         updatedData.ZipCode,
+		"country":          updatedData.Country,
+		"website":          updatedData.Website,
+		"image":            updatedData.Image,
+		"status":           updatedData.Status,
+		"is_verified":      updatedData.IsVerified,
+		"opening_hours":    updatedData.OpeningHours,
+		"home_delivery":    updatedData.HomeDelivery,
+		"payment_methods":  updatedData.PaymentMethods,
+	}
+
+	// Only include audit fields in updates when owner resets to pending
+	if shouldResetToPending {
+		updates["approved_by"] = nil
+		updates["approved_at"] = nil
+		// RejectedBy/RejectedAt are preserved (not included in updates)
+	}
+
+	if err := initializers.DB.Model(&business).Updates(updates).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
+
+	// Re-fetch to return updated data
+	if err := initializers.DB.First(&business, id).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
 	}

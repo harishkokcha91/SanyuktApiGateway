@@ -366,25 +366,33 @@ func convertProfileDateFormat(inputDate string) (time.Time, error) {
 	}
 	return dateOfBirth, nil
 }
+// UpdateProfile handles PUT /matrimonialProfiles/:id
 func UpdateProfile(c *gin.Context) {
 	id := c.Param("id")
-	var existingUser models.Profile
+	var existingProfile models.Profile
 
-	// Fetch the existing user
-	if err := database.DB.First(&existingUser, id).Error; err != nil {
-		utils.RespondNotFound(c, "User not found")
+	// Fetch the existing profile
+	if err := database.DB.First(&existingProfile, id).Error; err != nil {
+		utils.RespondNotFound(c, "Profile not found")
 		return
 	}
 
-	// Ownership check: only the profile owner can update
-	userID, exists := c.Get("userid")
-	if !exists {
+	// Get current user info from context
+	userID, hasUserID := c.Get("userid")
+	userRole, hasUserRole := c.Get("role")
+
+	// Ownership check: only the profile owner can update (admins can also update)
+	if hasUserID {
+		userIDStr := fmt.Sprintf("%v", userID)
+		if fmt.Sprintf("%d", existingProfile.UserId) != userIDStr {
+			// Not owner, check if admin
+			if !(hasUserRole && userRole == "admin") {
+				utils.RespondForbidden(c, "You can only update your own profile")
+				return
+			}
+		}
+	} else {
 		utils.RespondUnauthorized(c, "User ID not found in token")
-		return
-	}
-	userIDStr := fmt.Sprintf("%v", userID)
-	if fmt.Sprintf("%d", existingUser.UserId) != userIDStr {
-		utils.RespondForbidden(c, "You can only update your own profile")
 		return
 	}
 
@@ -395,13 +403,78 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	// Update only non-empty fields
-	if err := database.DB.Model(&existingUser).Updates(updatedData).Error; err != nil {
+	// Determine if current user is admin
+	isAdmin := hasUserRole && userRole == "admin"
+
+	// Owner edit on Approved/active record -> reset to Pending
+	// Profile uses "active" as approved status, "pending" as pending status
+	isApproved := existingProfile.Status == "active"
+	shouldResetToPending := !isAdmin && hasUserID && isApproved
+	if shouldResetToPending {
+		// Owner editing an approved profile - reset to pending
+		updatedData.Status = "pending"
+		updatedData.ApprovedBy = nil
+		updatedData.ApprovedAt = nil
+		// Preserve RejectedBy/RejectedAt if previously rejected
+	}
+
+	// Prevent owners from directly setting status to Approved/Rejected
+	// Only admins can set status to active (approved) or rejected
+	if !isAdmin {
+		if updatedData.Status == "active" || updatedData.Status == "inactive" {
+			// Ignore owner-provided status changes to approved/rejected states
+			updatedData.Status = existingProfile.Status
+		}
+	}
+
+	// Build update map to handle pointer fields correctly (GORM doesn't update zero values in structs)
+	// Only include audit fields when they're being intentionally changed (owner re-pending)
+	updates := map[string]interface{}{
+		"profile_for":        updatedData.ProfileFor,
+		"name":               updatedData.Name,
+		"image":              updatedData.Image,
+		"date_of_birth":      updatedData.DateOfBirth,
+		"birth_place":        updatedData.BirthPlace,
+		"height":             updatedData.Height,
+		"complexion":         updatedData.Complexion,
+		"gotra_self":         updatedData.GotraSelf,
+		"gotra_mother":       updatedData.GotraMother,
+		"gotra_grand_mother": updatedData.GotraGrandMother,
+		"manglik":            updatedData.Manglik,
+		"father_name":        updatedData.FatherName,
+		"father_occupation":  updatedData.FatherOccupation,
+		"mother_name":        updatedData.MotherName,
+		"mother_occupation":  updatedData.MotherOccupation,
+		"siblings":           updatedData.Siblings,
+		"qualification":      updatedData.Qualification,
+		"occupation":         updatedData.Occupation,
+		"annual_income":      updatedData.AnnualIncome,
+		"marital_status":     updatedData.MaritalStatus,
+		"address":            updatedData.Address,
+		"current_location":   updatedData.CurrentLocation,
+		"status":             updatedData.Status,
+		"phone_numbers":      updatedData.PhoneNumbers,
+	}
+
+	// Only include audit fields in updates when owner resets to pending
+	if shouldResetToPending {
+		updates["approved_by"] = nil
+		updates["approved_at"] = nil
+		// RejectedBy/RejectedAt are preserved (not included in updates)
+	}
+
+	if err := database.DB.Model(&existingProfile).Updates(updates).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, existingUser)
+	// Re-fetch to return updated data
+	if err := database.DB.First(&existingProfile, id).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, existingProfile)
 }
 
 func DeleteProfile(c *gin.Context) {
