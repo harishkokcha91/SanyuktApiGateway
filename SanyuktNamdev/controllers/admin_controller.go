@@ -340,3 +340,181 @@ func AdminReject(c *gin.Context) {
 		"data":    modelInstance,
 	})
 }
+
+// AdminAnalyticsSummary handles GET /admin/analytics/summary
+func AdminAnalyticsSummary(c *gin.Context) {
+	// Verify admin role
+	role, exists := c.Get("role")
+	if !exists || role != "admin" {
+		utils.RespondForbidden(c, "Admin access required")
+		return
+	}
+
+	summary, err := utils.GetAllStatusCounts()
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to fetch analytics summary")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Analytics summary retrieved successfully",
+		"data":    summary,
+	})
+}
+
+// AdminAnalyticsPending handles GET /admin/analytics/pending
+func AdminAnalyticsPending(c *gin.Context) {
+	// Verify admin role
+	role, exists := c.Get("role")
+	if !exists || role != "admin" {
+		utils.RespondForbidden(c, "Admin access required")
+		return
+	}
+
+	modelType := c.DefaultQuery("type", "")
+	if modelType == "" {
+		utils.RespondValidationError(c, "type parameter is required (profile, business, event, achievement)")
+		return
+	}
+
+	// Validate model type
+	validTypes := map[string]bool{
+		"profile":     true,
+		"business":    true,
+		"event":       true,
+		"achievement": true,
+	}
+	if !validTypes[modelType] {
+		utils.RespondValidationError(c, "invalid type: must be one of profile, business, event, achievement")
+		return
+	}
+
+	// Parse pagination
+	page := 1
+	if p := c.DefaultQuery("page", "1"); p != "" {
+		if parsed, err := strconv.Atoi(p); err == nil && parsed > 0 {
+			page = parsed
+		}
+	}
+
+	limit := 20
+	if l := c.DefaultQuery("limit", "20"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 100 {
+			limit = parsed
+		}
+	}
+
+	offset := (page - 1) * limit
+
+	items, total, err := utils.GetPendingItems(modelType, limit, offset)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to fetch pending items")
+		return
+	}
+
+	totalPages := int((total + int64(limit) - 1) / int64(limit))
+
+	c.JSON(http.StatusOK, gin.H{
+		"page":         page,
+		"limit":        limit,
+		"totalPages":   totalPages,
+		"totalRecords": total,
+		"data":         items,
+	})
+}
+
+// AdminAnalyticsTurnaround handles GET /admin/analytics/turnaround
+func AdminAnalyticsTurnaround(c *gin.Context) {
+	// Verify admin role
+	role, exists := c.Get("role")
+	if !exists || role != "admin" {
+		utils.RespondForbidden(c, "Admin access required")
+		return
+	}
+
+	modelType := c.DefaultQuery("type", "")
+	if modelType == "" {
+		// Return all model types
+		allStats, err := utils.GetAllApprovalTurnarounds()
+		if err != nil {
+			utils.RespondInternalError(c, "Failed to fetch turnaround statistics")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Turnaround statistics retrieved successfully",
+			"data":    allStats,
+		})
+		return
+	}
+
+	// Validate model type
+	validTypes := map[string]bool{
+		"profile":     true,
+		"business":    true,
+		"event":       true,
+		"achievement": true,
+	}
+	if !validTypes[modelType] {
+		utils.RespondValidationError(c, "invalid type: must be one of profile, business, event, achievement")
+		return
+	}
+
+	stats, err := utils.GetApprovalTurnaround(modelType)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to fetch turnaround statistics")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Turnaround statistics retrieved successfully",
+		"data":    stats,
+	})
+}
+
+// AdminAnalyticsRejections handles GET /admin/analytics/rejections
+func AdminAnalyticsRejections(c *gin.Context) {
+	// Verify admin role
+	role, exists := c.Get("role")
+	if !exists || role != "admin" {
+		utils.RespondForbidden(c, "Admin access required")
+		return
+	}
+
+	modelType := c.DefaultQuery("type", "")
+	if modelType == "" {
+		// Return all model types
+		allRates, err := utils.GetAllRejectionRates()
+		if err != nil {
+			utils.RespondInternalError(c, "Failed to fetch rejection rates")
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Rejection rates retrieved successfully",
+			"data":    allRates,
+		})
+		return
+	}
+
+	// Validate model type
+	validTypes := map[string]bool{
+		"profile":     true,
+		"business":    true,
+		"event":       true,
+		"achievement": true,
+	}
+	if !validTypes[modelType] {
+		utils.RespondValidationError(c, "invalid type: must be one of profile, business, event, achievement")
+		return
+	}
+
+	rate, err := utils.GetRejectionRates(modelType)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to fetch rejection rates")
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Rejection rates retrieved successfully",
+		"data":    rate,
+	})
+}
