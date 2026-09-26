@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -32,8 +33,12 @@ func (c *NotificationPreferenceController) GetNotificationPreferences(ctx *gin.C
 		return
 	}
 
-	userIDStr := strconv.FormatUint(uint64(userID.(uint)), 10)
-	uid, _ := strconv.ParseUint(userIDStr, 10, 64)
+	userIDStr := fmt.Sprintf("%v", userID)
+	uid, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		utils.RespondInternalError(ctx, "Invalid user ID")
+		return
+	}
 
 	var preferences []models.NotificationPreference
 	if err := c.db.Where("user_id = ?", uid).Find(&preferences).Error; err != nil {
@@ -83,8 +88,12 @@ func (c *NotificationPreferenceController) UpdateNotificationPreference(ctx *gin
 		return
 	}
 
-	userIDStr := strconv.FormatUint(uint64(userID.(uint)), 10)
-	uid, _ := strconv.ParseUint(userIDStr, 10, 64)
+	userIDStr := fmt.Sprintf("%v", userID)
+	uid, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		utils.RespondInternalError(ctx, "Invalid user ID")
+		return
+	}
 
 	channel := ctx.Param("channel")
 	validChannels := map[string]bool{
@@ -99,25 +108,37 @@ func (c *NotificationPreferenceController) UpdateNotificationPreference(ctx *gin
 	}
 
 	var req struct {
-		Enabled bool `json:"enabled"`
+		Enabled *bool `json:"enabled"`
 	}
 
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err = ctx.ShouldBindJSON(&req); err != nil {
 		utils.RespondValidationError(ctx, "Invalid request body: enabled (boolean) required")
 		return
 	}
 
+	if req.Enabled == nil {
+		utils.RespondValidationError(ctx, "Invalid request body: enabled (boolean) required")
+		return
+	}
+
+	enabled := *req.Enabled
+
 	var preference models.NotificationPreference
-	err := c.db.Where("user_id = ? AND channel = ?", uid, channel).First(&preference).Error
+	err = c.db.Where("user_id = ? AND channel = ?", uid, channel).First(&preference).Error
 
 	if err == gorm.ErrRecordNotFound {
-		// Create new preference
-		preference = models.NotificationPreference{
-			UserID:  uint(uid),
-			Channel: models.NotificationChannel(channel),
-			Enabled: req.Enabled,
+		// Create new preference using map to avoid GORM zero-value skipping
+		preferenceMap := map[string]interface{}{
+			"user_id": uint(uid),
+			"channel": channel,
+			"enabled": enabled,
 		}
-		if err := c.db.Create(&preference).Error; err != nil {
+		if err := c.db.Model(&models.NotificationPreference{}).Create(preferenceMap).Error; err != nil {
+			utils.RespondDBError(ctx, err)
+			return
+		}
+		// Fetch the created record to return it
+		if err := c.db.Where("user_id = ? AND channel = ?", uid, channel).First(&preference).Error; err != nil {
 			utils.RespondDBError(ctx, err)
 			return
 		}
@@ -126,7 +147,7 @@ func (c *NotificationPreferenceController) UpdateNotificationPreference(ctx *gin
 		return
 	} else {
 		// Update existing
-		preference.Enabled = req.Enabled
+		preference.Enabled = enabled
 		if err := c.db.Save(&preference).Error; err != nil {
 			utils.RespondDBError(ctx, err)
 			return
@@ -147,8 +168,12 @@ func (c *NotificationPreferenceController) ResetNotificationPreferences(ctx *gin
 		return
 	}
 
-	userIDStr := strconv.FormatUint(uint64(userID.(uint)), 10)
-	uid, _ := strconv.ParseUint(userIDStr, 10, 64)
+	userIDStr := fmt.Sprintf("%v", userID)
+	uid, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		utils.RespondInternalError(ctx, "Invalid user ID")
+		return
+	}
 
 	channels := []models.NotificationChannel{
 		models.ChannelInApp,

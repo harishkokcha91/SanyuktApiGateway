@@ -204,6 +204,11 @@ func TestNotificationPreferences_IntegrationWithNotificationService(t *testing.T
 	sqlDB, _ := db.DB()
 	defer sqlDB.Close()
 
+	// Create default preferences for user (enabled=true by default)
+	for _, channel := range []string{"in-app", "email", "push"} {
+		db.Exec("INSERT INTO notification_preferences (user_id, channel, enabled, created_at, updated_at) VALUES (?, ?, true, datetime('now'), datetime('now'))", 1, channel)
+	}
+
 	// Disable email for user
 	db.Exec("UPDATE notification_preferences SET enabled = false WHERE user_id = 1 AND channel = 'email'")
 
