@@ -4,11 +4,59 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+// getMigrationsPath returns the migrations path from environment variable or computes a sensible default
+func getMigrationsPath() string {
+	// Check environment variable first (for Docker, AWS, CI/CD)
+	if envPath := os.Getenv("MIGRATIONS_PATH"); envPath != "" {
+		// Ensure it's a valid file:// URL
+		if filepath.IsAbs(envPath) {
+			return "file://" + filepath.ToSlash(envPath)
+		}
+		return envPath
+	}
+
+	// Local development default: relative to project root
+	// Try to find migrations directory from current working directory
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Printf("⚠️  Could not get working directory: %v", err)
+	} else {
+		// Look for migrations in common locations relative to wd
+		candidates := []string{
+			filepath.Join(wd, "..", "..", "migrations"),     // from DBService/
+			filepath.Join(wd, "..", "migrations"),           // from DBService/cmd/migrate/
+			filepath.Join(wd, "migrations"),                 // from project root
+			"/app/migrations",                               // Docker default
+			"/migrations",                                   // Alternative Docker
+		}
+		for _, candidate := range candidates {
+			absPath, _ := filepath.Abs(candidate)
+			if _, err := os.Stat(absPath); err == nil {
+				return "file://" + filepath.ToSlash(absPath)
+			}
+		}
+	}
+
+	// Fallback: log warning and return empty (will fail with clear error)
+	log.Println("⚠️  MIGRATIONS_PATH not set and migrations directory not found in standard locations")
+	return ""
+}
+
+func makeMigrateInstance(dsn string) (*migrate.Migrate, error) {
+	migrationsPath := getMigrationsPath()
+	if migrationsPath == "" {
+		return nil, fmt.Errorf("migrations path not configured: set MIGRATIONS_PATH environment variable")
+	}
+	log.Printf("🔍 Using migrations path: %s", migrationsPath)
+	return migrate.New(migrationsPath, dsn)
+}
 
 // RunMigrations runs all pending database migrations using golang-migrate
 func RunMigrations() {
@@ -22,10 +70,9 @@ func RunMigrations() {
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
 
-	// Migration files path (relative to project root)
-	migrationsPath := "file://../../migrations"
+	log.Println("🚀 Starting database migration...")
 
-	m, err := migrate.New(migrationsPath, dsn)
+	m, err := makeMigrateInstance(dsn)
 	if err != nil {
 		log.Fatalf("❌ Failed to create migrate instance: %v", err)
 	}
@@ -63,9 +110,10 @@ func RollbackMigration() {
 	dbname := getEnv("DB_NAME", "sanyukt")
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
-	migrationsPath := "file://../../migrations"
 
-	m, err := migrate.New(migrationsPath, dsn)
+	log.Println("🔄 Rolling back last migration...")
+
+	m, err := makeMigrateInstance(dsn)
 	if err != nil {
 		log.Fatalf("❌ Failed to create migrate instance: %v", err)
 	}
@@ -74,6 +122,9 @@ func RollbackMigration() {
 		log.Fatalf("❌ Rollback failed: %v", err)
 	}
 	log.Println("✅ Rolled back one migration")
+
+	version, dirty, _ := m.Version()
+	log.Printf("📋 Current migration version: %d (dirty: %v)", version, dirty)
 }
 
 // MigrationStatus prints the current migration status
@@ -87,9 +138,8 @@ func MigrationStatus() {
 	dbname := getEnv("DB_NAME", "sanyukt")
 
 	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", user, password, host, port, dbname)
-	migrationsPath := "file://../../migrations"
 
-	m, err := migrate.New(migrationsPath, dsn)
+	m, err := makeMigrateInstance(dsn)
 	if err != nil {
 		log.Fatalf("❌ Failed to create migrate instance: %v", err)
 	}
@@ -108,9 +158,8 @@ func MigrationStatus() {
 	fmt.Printf("Dirty: %v\n", dirty)
 
 	// List all available migrations
-	// Note: golang-migrate doesn't have a built-in way to list all migrations,
-	// but we can read the directory
-	files, err := os.ReadDir("../../migrations")
+	migrationsDir := getMigrationsDir()
+	files, err := os.ReadDir(migrationsDir)
 	if err != nil {
 		log.Printf("⚠️  Could not read migrations directory: %v", err)
 		return
@@ -122,4 +171,25 @@ func MigrationStatus() {
 			fmt.Printf("  %s\n", f.Name())
 		}
 	}
+}
+
+func getMigrationsDir() string {
+	if envPath := os.Getenv("MIGRATIONS_PATH"); envPath != "" {
+		return envPath
+	}
+	wd, _ := os.Getwd()
+	candidates := []string{
+		filepath.Join(wd, "..", "..", "migrations"),
+		filepath.Join(wd, "..", "migrations"),
+		filepath.Join(wd, "migrations"),
+		"/app/migrations",
+		"/migrations",
+	}
+	for _, candidate := range candidates {
+		absPath, _ := filepath.Abs(candidate)
+		if _, err := os.Stat(absPath); err == nil {
+			return absPath
+		}
+	}
+	return ""
 }
