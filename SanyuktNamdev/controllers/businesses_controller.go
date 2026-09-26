@@ -6,7 +6,6 @@ import (
 	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,29 +15,35 @@ import (
 func GetBusinesses(c *gin.Context) {
 	var businesses []models.Business
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset := (page - 1) * limit
+	// Parse search parameters
+	params := utils.ParseSearchParams(c, utils.BusinessSearchConfig, utils.BusinessCustomFilters())
 
-	// Apply public status filter - only show approved businesses to public
-	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "business")
+	// Build base query with public status filter
+	baseQuery := utils.ApplyPublicStatusFilter(c, initializers.DB, "business")
 
-	if err := query.Offset(offset).Limit(limit).Find(&businesses).Error; err != nil {
+	// Build search query with filters, sorting, pagination
+	query := utils.BuildSearchQuery(baseQuery, params, utils.BusinessSearchConfig)
+
+	if err := query.Find(&businesses).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch businesses")
 		return
 	}
 
+	// Get the total number of records (with filter applied)
+	countQuery := utils.ApplyPublicStatusFilter(c, initializers.DB.Model(&models.Business{}), "business")
+	countQuery = utils.BuildCountQuery(countQuery, params, utils.BusinessSearchConfig)
+
 	var totalRecords int64
-	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Business{}), "business").Count(&totalRecords).Error; err != nil {
+	if err := countQuery.Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to count businesses")
 		return
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(params.Limit)))
 
 	c.JSON(http.StatusOK, gin.H{
-		"page":         page,
-		"limit":        limit,
+		"page":         params.Offset/params.Limit + 1,
+		"limit":        params.Limit,
 		"totalPages":   totalPages,
 		"totalRecords": totalRecords,
 		"data":         businesses,

@@ -6,7 +6,6 @@ import (
 	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,49 +31,38 @@ func CreateAchievement(c *gin.Context) {
 func GetAchievements(c *gin.Context) {
 	var achievements []models.Achievement
 
-	// Get page and limit from query parameters (default: page=1, limit=10)
-	page := c.DefaultQuery("page", "1")
-	limit := c.DefaultQuery("limit", "10")
+	// Parse search parameters
+	params := utils.ParseSearchParams(c, utils.AchievementSearchConfig, utils.AchievementCustomFilters())
 
-	// Convert page & limit to integers
-	pageInt, err := strconv.Atoi(page)
-	if err != nil || pageInt < 1 {
-		utils.RespondValidationError(c, "Invalid page number")
-		return
-	}
+	// Build base query with public status filter
+	baseQuery := utils.ApplyPublicStatusFilter(c, initializers.DB, "achievement")
 
-	limitInt, err := strconv.Atoi(limit)
-	if err != nil || limitInt < 1 {
-		utils.RespondValidationError(c, "Invalid limit")
-		return
-	}
-
-	// Calculate offset for pagination
-	offset := (pageInt - 1) * limitInt
-
-	// Apply public status filter - only show approved achievements to public
-	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "achievement")
+	// Build search query with filters, sorting, pagination
+	query := utils.BuildSearchQuery(baseQuery, params, utils.AchievementSearchConfig)
 
 	// Fetch paginated achievements
-	if err := query.Offset(offset).Limit(limitInt).Find(&achievements).Error; err != nil {
+	if err := query.Find(&achievements).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch achievements")
 		return
 	}
 
 	// Get the total number of records
+	countQuery := utils.ApplyPublicStatusFilter(c, initializers.DB.Model(&models.Achievement{}), "achievement")
+	countQuery = utils.BuildCountQuery(countQuery, params, utils.AchievementSearchConfig)
+
 	var totalRecords int64
-	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Achievement{}), "achievement").Count(&totalRecords).Error; err != nil {
+	if err := countQuery.Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch total records")
 		return
 	}
 
 	// Calculate total pages
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(limitInt)))
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(params.Limit)))
 
 	// Return paginated response
 	c.JSON(http.StatusOK, gin.H{
-		"page":         pageInt,
-		"limit":        limitInt,
+		"page":         params.Offset/params.Limit + 1,
+		"limit":        params.Limit,
 		"totalPages":   totalPages,
 		"totalRecords": totalRecords,
 		"data":         achievements,

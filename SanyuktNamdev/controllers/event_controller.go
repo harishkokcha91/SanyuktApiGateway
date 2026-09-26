@@ -6,7 +6,6 @@ import (
 	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,29 +15,50 @@ import (
 func GetEvents(c *gin.Context) {
 	var events []models.Event
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
-	offset := (page - 1) * limit
+	// Parse search parameters
+	params := utils.ParseSearchParams(c, utils.EventSearchConfig, utils.EventCustomFilters())
 
-	// Apply public status filter - only show approved events to public
-	query := utils.GetQueryWithPublicStatus(c, initializers.DB, "event")
+	// Handle date_range special filter
+	if dateRange := c.DefaultQuery("date_range", ""); dateRange != "" {
+		params.CustomFilters["date_range"] = dateRange
+	}
 
-	if err := query.Offset(offset).Limit(limit).Find(&events).Error; err != nil {
+	// Build base query with public status filter
+	baseQuery := utils.ApplyPublicStatusFilter(c, initializers.DB, "event")
+
+	// Apply date range filter if provided
+	if dateRange := c.DefaultQuery("date_range", ""); dateRange != "" {
+		startDate, endDate := utils.ParseDateRange(dateRange)
+		baseQuery = utils.ApplyDateRangeFilter(baseQuery, "event_date", startDate, endDate)
+	}
+
+	// Build search query with filters, sorting, pagination
+	query := utils.BuildSearchQuery(baseQuery, params, utils.EventSearchConfig)
+
+	if err := query.Find(&events).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch events")
 		return
 	}
 
+	// Get the total number of records (with filter applied)
+	countQuery := utils.ApplyPublicStatusFilter(c, initializers.DB.Model(&models.Event{}), "event")
+	if dateRange := c.DefaultQuery("date_range", ""); dateRange != "" {
+		startDate, endDate := utils.ParseDateRange(dateRange)
+		countQuery = utils.ApplyDateRangeFilter(countQuery, "event_date", startDate, endDate)
+	}
+	countQuery = utils.BuildCountQuery(countQuery, params, utils.EventSearchConfig)
+
 	var totalRecords int64
-	if err := utils.GetQueryWithPublicStatus(c, initializers.DB.Model(&models.Event{}), "event").Count(&totalRecords).Error; err != nil {
+	if err := countQuery.Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to count events")
 		return
 	}
 
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(params.Limit)))
 
 	c.JSON(http.StatusOK, gin.H{
-		"page":         page,
-		"limit":        limit,
+		"page":         params.Offset/params.Limit + 1,
+		"limit":        params.Limit,
 		"totalPages":   totalPages,
 		"totalRecords": totalRecords,
 		"data":         events,

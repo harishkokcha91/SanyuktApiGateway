@@ -22,49 +22,48 @@ import (
 func GetProfiles(c *gin.Context) {
 	var users []models.Profile
 
-	// Get the page and limit from the query parameters
-	page := c.DefaultQuery("page", "1")    // Default page to 1 if not provided
-	limit := c.DefaultQuery("limit", "10") // Default limit to 10 if not provided
+	// Parse search parameters
+	params := utils.ParseSearchParams(c, utils.ProfileSearchConfig, utils.ProfileCustomFilters())
 
-	// Convert page and limit to integers
-	pageInt, err := strconv.Atoi(page)
-	if err != nil || pageInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
-		return
+	// Build base query with public status filter
+	baseQuery := utils.ApplyPublicStatusFilter(c, database.DB, "profile")
+
+	// Apply age range filter if provided
+	if ageRange := c.DefaultQuery("age_range", ""); ageRange != "" {
+		minAge, maxAge := utils.ParseAgeRange(ageRange)
+		baseQuery = utils.ApplyAgeRangeFilter(baseQuery, minAge, maxAge)
 	}
 
-	limitInt, err := strconv.Atoi(limit)
-	if err != nil || limitInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
-		return
-	}
-
-	// Calculate the offset based on the page number
-	offset := (pageInt - 1) * limitInt
-
-	// Apply public status filter - only show approved/active profiles to public
-	query := utils.GetQueryWithPublicStatus(c, database.DB, "profile")
+	// Build search query with filters, sorting, pagination
+	query := utils.BuildSearchQuery(baseQuery, params, utils.ProfileSearchConfig)
 
 	// Fetch the data from the database with pagination
-	if err := query.Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
+	if err := query.Find(&users).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		return
 	}
 
 	// Get the total number of records (with filter applied)
+	countQuery := utils.ApplyPublicStatusFilter(c, database.DB.Model(&models.Profile{}), "profile")
+	if ageRange := c.DefaultQuery("age_range", ""); ageRange != "" {
+		minAge, maxAge := utils.ParseAgeRange(ageRange)
+		countQuery = utils.ApplyAgeRangeFilter(countQuery, minAge, maxAge)
+	}
+	countQuery = utils.BuildCountQuery(countQuery, params, utils.ProfileSearchConfig)
+
 	var totalRecords int64
-	if err := utils.GetQueryWithPublicStatus(c, database.DB.Model(&models.Profile{}), "profile").Count(&totalRecords).Error; err != nil {
+	if err := countQuery.Count(&totalRecords).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total records"})
 		return
 	}
 
 	// Calculate totalPages
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(limitInt)))
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(params.Limit)))
 
 	// Return the paginated data as response
 	c.JSON(http.StatusOK, gin.H{
-		"page":         pageInt,
-		"limit":        limitInt,
+		"page":         params.Offset/params.Limit + 1,
+		"limit":        params.Limit,
 		"totalPages":   totalPages,
 		"totalRecords": totalRecords,
 		"data":         users,
@@ -123,52 +122,54 @@ func GetProfilesByUserID(c *gin.Context) {
 		return
 	}
 
-	// Get the page and limit from the query parameters
-	page := c.DefaultQuery("page", "1")    // Default page to 1 if not provided
-	limit := c.DefaultQuery("limit", "10") // Default limit to 10 if not provided
+	// Parse search parameters
+	params := utils.ParseSearchParams(c, utils.ProfileSearchConfig, utils.ProfileCustomFilters())
 
-	// Convert page and limit to integers
-	pageInt, err := strconv.Atoi(page)
-	if err != nil || pageInt < 1 {
-		utils.RespondValidationError(c, "Invalid page number")
-		return
+	// Build base query with user_id filter
+	baseQuery := database.DB.Where("user_id = ?", id)
+
+	// Apply age range filter if provided
+	if ageRange := c.DefaultQuery("age_range", ""); ageRange != "" {
+		minAge, maxAge := utils.ParseAgeRange(ageRange)
+		baseQuery = utils.ApplyAgeRangeFilter(baseQuery, minAge, maxAge)
 	}
 
-	limitInt, err := strconv.Atoi(limit)
-	if err != nil || limitInt < 1 {
-		utils.RespondValidationError(c, "Invalid limit")
-		return
-	}
-
-	// Calculate the offset based on the page number
-	offset := (pageInt - 1) * limitInt
+	// Build search query with filters, sorting, pagination
+	query := utils.BuildSearchQuery(baseQuery, params, utils.ProfileSearchConfig)
 
 	// Fetch the profiles from the database with pagination
-	if err := database.DB.Where("user_id = ?", id).Offset(offset).Limit(limitInt).Find(&users).Error; err != nil {
+	if err := query.Find(&users).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch profiles")
 		return
 	}
 
-	// If no profiles are found, return a "not found" response
-	if len(users) == 0 {
-		utils.RespondNotFound(c, "User not found")
-		return
-	}
+	// If no profiles are found, return empty array (not "not found")
+	// if len(users) == 0 {
+	// 	utils.RespondNotFound(c, "User not found")
+	// 	return
+	// }
 
 	// Get the total number of matching records
+	countQuery := database.DB.Model(&models.Profile{}).Where("user_id = ?", id)
+	if ageRange := c.DefaultQuery("age_range", ""); ageRange != "" {
+		minAge, maxAge := utils.ParseAgeRange(ageRange)
+		countQuery = utils.ApplyAgeRangeFilter(countQuery, minAge, maxAge)
+	}
+	countQuery = utils.BuildCountQuery(countQuery, params, utils.ProfileSearchConfig)
+
 	var totalRecords int64
-	if err := database.DB.Model(&models.Profile{}).Where("user_id = ?", id).Count(&totalRecords).Error; err != nil {
+	if err := countQuery.Count(&totalRecords).Error; err != nil {
 		utils.RespondInternalError(c, "Failed to fetch total records")
 		return
 	}
 
 	// Calculate total pages
-	totalPages := int(math.Ceil(float64(totalRecords) / float64(limitInt)))
+	totalPages := int(math.Ceil(float64(totalRecords) / float64(params.Limit)))
 
 	// Return the paginated data as a response
 	c.JSON(http.StatusOK, gin.H{
-		"page":         pageInt,
-		"limit":        limitInt,
+		"page":         params.Offset/params.Limit + 1,
+		"limit":        params.Limit,
 		"totalPages":   totalPages,
 		"totalRecords": totalRecords,
 		"data":         users,
