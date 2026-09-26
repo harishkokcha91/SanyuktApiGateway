@@ -3,10 +3,9 @@ package controllers
 import (
 	"SanyuktNamdev/config"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"fmt"
 	"net/http"
-
-	"github.com/harishkokcha91/SanyuktAuthUtils/utils"
 
 	"github.com/gin-gonic/gin"
 )

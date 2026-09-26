@@ -2,14 +2,28 @@ package utils
 
 import (
 	"errors"
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/joho/godotenv"
 )
 
-var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+var jwtSecret []byte
+
+func init() {
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load()
+	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
+	if len(jwtSecret) == 0 {
+		log.Fatal("JWT_SECRET environment variable is required but not set")
+	}
+	if len(jwtSecret) < 32 {
+		log.Fatal("JWT_SECRET must be at least 32 bytes (256 bits) for HS256")
+	}
+}
 
 // GenerateToken creates a new JWT token for a user
 func GenerateToken(userId string) (string, error) {

@@ -23,14 +23,14 @@ func Connect() {
 	user := os.Getenv("PGUSER")
 	password := os.Getenv("PGPASSWORD")
 	dbname := os.Getenv("PGDATABASE")
+	sslmode := os.Getenv("PGSSLMODE")
+	if sslmode == "" {
+		sslmode = "require" // Production default
+	}
 
-	// dsn := fmt.Sprintf(
-	// 	"host=%s port=%s user=%s password=%s dbname=%s sslmode=require TimeZone=Asia/Kolkata",
-	// 	host, port, user, password, dbname,
-	// )
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	log.Printf("Connecting to DB at %s:%s as %s (password redacted)", host, port, user)
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode)
+	log.Printf("Connecting to DB at %s:%s as %s (password redacted, sslmode=%s)", host, port, user, sslmode)
 
 	// Configure GORM with silent logger to remove slow query logs
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
