@@ -10,10 +10,12 @@ import (
 
 // Setup authentication routes
 func SetupAuthRoutes(router *gin.Engine) {
+	// Stricter rate limiting on auth endpoints
+	authRateLimiter := middleware.AuthRateLimiter()
 
-	router.POST("/register", controllers.Register)
-	router.POST("/login", controllers.Login)
-	router.POST("/registerOne", controllers.RegisterUserIfExistReturnUser)
+	router.POST("/register", authRateLimiter, controllers.Register)
+	router.POST("/login", authRateLimiter, controllers.Login)
+	router.POST("/registerOne", authRateLimiter, controllers.RegisterUserIfExistReturnUser)
 
 	auth := router.Group("/auth")
 	auth.Use(middleware.AuthMiddleware())

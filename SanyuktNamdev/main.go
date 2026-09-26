@@ -40,8 +40,10 @@ func main() {
 	// Add middleware
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
-	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.SecurityCORSMiddleware(middleware.DefaultCORSConfig()))
+	r.Use(middleware.SecurityHeaders(false)) // false = dev mode (no HSTS/SSL redirect)
 	r.Use(middleware.BodyLimitMiddleware())
+	r.Use(middleware.GlobalRateLimiter())
 
 	// Healthcheck route
 	r.GET("/healthcheck", func(c *gin.Context) {

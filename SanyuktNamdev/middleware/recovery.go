@@ -3,7 +3,6 @@ package middleware
 import (
 	"SanyuktNamdev/utils"
 	"fmt"
-	"net/http"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
@@ -41,22 +40,6 @@ func RecoveryMiddleware() gin.HandlerFunc {
 				c.Abort()
 			}
 		}()
-		c.Next()
-	}
-}
-
-// CORSMiddleware is a placeholder for CORS configuration
-func CORSMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.Header("Access-Control-Allow-Origin", "*")
-		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		c.Header("Access-Control-Allow-Headers", "Origin, Authorization, Content-Type, X-Request-ID")
-		c.Header("Access-Control-Expose-Headers", "Content-Length, X-Request-ID")
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(http.StatusNoContent)
-			return
-		}
 		c.Next()
 	}
 }
