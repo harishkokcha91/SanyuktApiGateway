@@ -11,9 +11,11 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func GetProfiles(c *gin.Context) {
@@ -216,39 +218,77 @@ func UploadProfileImage(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Image uploaded successfully", "imagePath": imagePath})
 }
 
-// UploadImage handles image upload and returns the file path
+// UploadImageForProfile handles image upload and returns the file path
 func UploadImageForProfile(c *gin.Context, userID string) (string, error) {
 	// Get file from form
-	file, header, err := c.Request.FormFile("image")
+	file, _, err := c.Request.FormFile("image")
 	if err != nil {
 		return "", fmt.Errorf("image upload failed: %v", err)
 	}
 	defer file.Close()
 
+	// Read first 512 bytes for MIME detection
+	buffer := make([]byte, 512)
+	n, err := file.Read(buffer)
+	if err != nil && err != io.EOF {
+		return "", fmt.Errorf("failed to read file for MIME detection: %v", err)
+	}
+	// Reset reader
+	if _, err := file.Seek(0, io.SeekStart); err != nil {
+		return "", fmt.Errorf("failed to reset file reader: %v", err)
+	}
+
+	// MIME type validation
+	mimeType := http.DetectContentType(buffer[:n])
+	allowedMimes := map[string]bool{
+		"image/jpeg": true,
+		"image/png":  true,
+	}
+	if !allowedMimes[mimeType] {
+		return "", fmt.Errorf("invalid file type: %s. Only JPEG and PNG allowed", mimeType)
+	}
+
+	// Extension from MIME (not from user-provided filename)
+	var ext string
+	switch mimeType {
+	case "image/jpeg":
+		ext = ".jpg"
+	case "image/png":
+		ext = ".png"
+	}
+
 	// Create uploads directory if not exists
 	uploadDir := "uploads"
 	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
-		os.Mkdir(uploadDir, os.ModePerm)
+		if err := os.Mkdir(uploadDir, 0755); err != nil {
+			return "", fmt.Errorf("failed to create upload directory: %v", err)
+		}
 	}
 
-	// Generate file name with user ID as suffix
-	ext := filepath.Ext(header.Filename)
-	filename := fmt.Sprintf("%d_%s%s", os.Getpid(), userID, ext)
-	filepath := filepath.Join(uploadDir, filename)
+	// UUID-based filename (unpredictable, no collisions)
+	uuidStr := uuid.New().String()
+	filename := fmt.Sprintf("%s%s", uuidStr, ext)
+	filePath := filepath.Join(uploadDir, filename)
+
+	// Extra safety: ensure path stays within uploadDir
+	absUploadDir, _ := filepath.Abs(uploadDir)
+	absFilePath, _ := filepath.Abs(filePath)
+	if !strings.HasPrefix(absFilePath, absUploadDir) {
+		return "", fmt.Errorf("invalid file path")
+	}
 
 	// Save file
-	outFile, err := os.Create(filepath)
+	outFile, err := os.Create(filePath)
 	if err != nil {
 		return "", fmt.Errorf("could not save file: %v", err)
 	}
 	defer outFile.Close()
 
-	// Copy file data to the new file
 	if _, err = io.Copy(outFile, file); err != nil {
 		return "", fmt.Errorf("failed to save image: %v", err)
 	}
 
-	return filepath, nil
+	return filePath, nil
 }
 
 func CreateProfileWithImage(c *gin.Context) {

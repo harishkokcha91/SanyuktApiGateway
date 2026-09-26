@@ -4,15 +4,17 @@ import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/middleware"
 	"SanyuktNamdev/routes"
+	"SanyuktNamdev/utils"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 )
 
@@ -39,6 +41,7 @@ func main() {
 	r.Use(middleware.RequestIDMiddleware())
 	r.Use(middleware.RecoveryMiddleware())
 	r.Use(middleware.CORSMiddleware())
+	r.Use(middleware.BodyLimitMiddleware())
 
 	// Healthcheck route
 	r.GET("/healthcheck", func(c *gin.Context) {
@@ -60,45 +63,85 @@ func main() {
 // Max file size (2MB)
 const MaxUploadSize = 2 << 20 // 2MB
 
-// Allowed file types
-var allowedExtensions = map[string]bool{
-	".jpg":  true,
-	".jpeg": true,
-	".png":  true,
+// Allowed MIME types
+var allowedMimes = map[string]bool{
+	"image/jpeg": true,
+	"image/png":  true,
 }
 
 // Upload image function
 func uploadImage(c *gin.Context) {
 	file, err := c.FormFile("image")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Image file is required"})
+		utils.RespondValidationError(c, "Image file is required")
 		return
 	}
 
 	// Check file size
 	if file.Size > MaxUploadSize {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File size exceeds 2MB limit"})
+		utils.RespondValidationError(c, "File size exceeds 2MB limit")
 		return
 	}
 
-	// Check file extension
-	ext := strings.ToLower(filepath.Ext(file.Filename))
-	if !allowedExtensions[ext] {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type. Only JPG, JPEG, PNG are allowed"})
+	// Open and validate MIME
+	src, err := file.Open()
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to open uploaded file")
+		return
+	}
+	defer src.Close()
+
+	buffer := make([]byte, 512)
+	n, err := src.Read(buffer)
+	if err != nil && err != io.EOF {
+		utils.RespondInternalError(c, "Failed to read file for MIME detection")
+		return
+	}
+	if _, err := src.Seek(0, io.SeekStart); err != nil {
+		utils.RespondInternalError(c, "Failed to reset file reader")
 		return
 	}
 
-	// Generate unique filename
-	filename := fmt.Sprintf("%d%s", time.Now().UnixNano(), ext)
-	filePath := filepath.Join("uploads", filename)
+	mimeType := http.DetectContentType(buffer[:n])
+	if !allowedMimes[mimeType] {
+		utils.RespondValidationError(c, fmt.Sprintf("Invalid file type: %s. Only JPEG and PNG allowed", mimeType))
+		return
+	}
 
-	// Save file
+	// Extension from MIME
+	var ext string
+	switch mimeType {
+	case "image/jpeg":
+		ext = ".jpg"
+	case "image/png":
+		ext = ".png"
+	}
+
+	uploadDir := "uploads"
+	if _, err := os.Stat(uploadDir); os.IsNotExist(err) {
+		if err := os.Mkdir(uploadDir, 0755); err != nil {
+			utils.RespondInternalError(c, "Failed to create upload directory")
+			return
+		}
+	}
+
+	uuidStr := uuid.New().String()
+	filename := fmt.Sprintf("%s%s", uuidStr, ext)
+	filePath := filepath.Join(uploadDir, filename)
+
+	// Path traversal protection
+	absUploadDir, _ := filepath.Abs(uploadDir)
+	absFilePath, _ := filepath.Abs(filePath)
+	if !strings.HasPrefix(absFilePath, absUploadDir) {
+		utils.RespondInternalError(c, "Invalid file path")
+		return
+	}
+
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save image"})
+		utils.RespondInternalError(c, "Failed to save image")
 		return
 	}
 
-	// Return image URL
 	imageURL := fmt.Sprintf("http://localhost:8084/uploads/%s", filename)
 	c.JSON(http.StatusOK, gin.H{"message": "Image uploaded successfully", "image_url": imageURL})
 }

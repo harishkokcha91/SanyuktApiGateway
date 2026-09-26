@@ -4,24 +4,24 @@ import "gorm.io/gorm"
 
 type Business struct {
 	gorm.Model
-	Name           string   `json:"name" binding:"required"`
-	Category       string   `json:"category" binding:"required"`
-	Description    string   `json:"description"`
-	Owner          string   `json:"owner"` // Added Owner
-	Email          string   `json:"email"` // Moved up for better readability
-	Phone          string   `json:"phone"`
-	WhatsApp       string   `json:"whatsapp"`
-	Location       string   `json:"location"` // Added Location
-	Address        string   `json:"address"`
-	City           string   `json:"city"`     // Added City
-	State          string   `json:"state"`    // Added State
-	ZipCode        string   `json:"zip_code"` // Added Zip Code
-	Country        string   `json:"country"`  // Added Country
-	Website        string   `json:"website"`
+	Name           string   `json:"name" binding:"required,min=2,max=200"`
+	Category       string   `json:"category" binding:"required,max=100"`
+	Description    string   `json:"description" binding:"max=2000"`
+	Owner          string   `json:"owner" binding:"required,max=100"`
+	Email          string   `json:"email" binding:"required,email"`
+	Phone          string   `json:"phone" binding:"max=20"`
+	WhatsApp       string   `json:"whatsapp" binding:"max=20"`
+	Location       string   `json:"location" binding:"required,max=200"`
+	Address        string   `json:"address" binding:"max=300"`
+	City           string   `json:"city" binding:"required,max=100"`
+	State          string   `json:"state" binding:"required,max=100"`
+	ZipCode        string   `json:"zip_code" binding:"max=20"`
+	Country        string   `json:"country" binding:"required,max=100"`
+	Website        string   `json:"website" binding:"url"`
 	Image          string   `json:"image"`
-	Status         string   `json:"status" gorm:"default:'Active'"`   // Default to "Active"
-	IsVerified     bool     `json:"is_verified" gorm:"default:false"` // Default to false
-	OpeningHours   string   `json:"opening_hours"`
+	Status         string   `json:"status" gorm:"default:'Active'" binding:"oneof=Active Inactive Pending"`
+	IsVerified     bool     `json:"is_verified" gorm:"default:false"`
+	OpeningHours   string   `json:"opening_hours" binding:"max=100"`
 	HomeDelivery   bool     `json:"home_delivery"`
 	PaymentMethods []string `gorm:"type:text" json:"payment_methods"`
 }
