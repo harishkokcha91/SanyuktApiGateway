@@ -172,7 +172,13 @@ func CreateProfile(c *gin.Context) {
 		utils.RespondUnauthorized(c, "User ID not found in token")
 		return
 	}
-	user.UserId = authUserID.(uint)
+	userIDStr := fmt.Sprintf("%v", authUserID)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		utils.RespondInternalError(c, "Invalid user ID")
+		return
+	}
+	user.UserId = uint(userID)
 
 	user.Status = "pending"
 	if err := database.DB.Create(&user).Error; err != nil {
@@ -310,7 +316,13 @@ func CreateProfileWithImage(c *gin.Context) {
 		utils.RespondUnauthorized(c, "User ID not found in token")
 		return
 	}
-	user.UserId = authUserID.(uint)
+	userIDStr := fmt.Sprintf("%v", authUserID)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
+	if err != nil {
+		utils.RespondInternalError(c, "Invalid user ID")
+		return
+	}
+	user.UserId = uint(userID)
 
 	// Upload image
 	imagePath, err := UploadImageForProfile(c, fmt.Sprintf("%d", user.UserId))

@@ -16,14 +16,22 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		// Remove the "Bearer " prefix from the Authorization header to get the token
-		if len(tokenString) < 7 || tokenString[:7] != "Bearer " {
+		const bearerPrefix = "Bearer "
+		if len(tokenString) < len(bearerPrefix) || tokenString[:len(bearerPrefix)] != bearerPrefix {
 			utils.RespondUnauthorized(c, "Invalid Authorization header format")
 			c.Abort()
 			return
 		}
 
 		// Extract the token from the Authorization header
-		tokenString = tokenString[7:]
+		tokenString = tokenString[len(bearerPrefix):]
+
+		// Check for empty token after Bearer prefix
+		if tokenString == "" {
+			utils.RespondUnauthorized(c, "Invalid Authorization header format")
+			c.Abort()
+			return
+		}
 
 		// Validate the token
 		claims, err := utils.ValidateToken(tokenString)
@@ -50,6 +58,12 @@ func RequireRole(role string) gin.HandlerFunc {
 		if !exists {
 			utils.RespondForbidden(c, "Role not found in token")
 			c.Abort()
+			return
+		}
+
+		// Admin role has access to all roles
+		if userRole == "admin" {
+			c.Next()
 			return
 		}
 
