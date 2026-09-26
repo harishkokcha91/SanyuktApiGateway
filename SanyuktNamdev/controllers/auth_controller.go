@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"SanyuktNamdev/config"
+	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
 	"SanyuktNamdev/utils"
 	"fmt"
@@ -25,7 +25,7 @@ func Register(c *gin.Context) {
 	}
 	user.Password = hashedPassword
 
-	if err := config.DB.Create(&user).Error; err != nil {
+	if err := database.DB.Create(&user).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
 	}
@@ -43,7 +43,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Check if user exists
-	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
+	if err := database.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
 		utils.RespondUnauthorized(c, "Invalid credentials")
 		return
 	}
@@ -76,7 +76,7 @@ func RegisterUserIfExistReturnUser(c *gin.Context) {
 	// Check if the user already exists by email or phone number
 	var existingUser models.User
 	// if err := config.DB.Where("email = ? OR phone_numbers = ?", user.Email, user.PhoneNumbers).First(&existingUser).Error; err == nil {
-	if err := config.DB.Where("email = ?", user.Email).First(&existingUser).Error; err == nil {
+	if err := database.DB.Where("email = ?", user.Email).First(&existingUser).Error; err == nil {
 		// User already exists, return existing user details
 		c.JSON(http.StatusOK, gin.H{"message": "User already exists", "user": existingUser})
 		return
@@ -91,7 +91,7 @@ func RegisterUserIfExistReturnUser(c *gin.Context) {
 	user.Password = hashedPassword
 
 	// Create the new user in the database
-	if err := config.DB.Create(&user).Error; err != nil {
+	if err := database.DB.Create(&user).Error; err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "Failed to register user")
 		return
 	}

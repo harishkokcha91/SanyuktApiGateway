@@ -26,109 +26,35 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      auth-service:
-        condition: service_started
-      user:
-        condition: service_started
-      userprofile:
-        condition: service_started
-      brillientstudent:
-        condition: service_started
-      imageupload:
-        condition: service_started
-      event:
-        condition: service_started
-      business:
+      sanyuktnamdev:
         condition: service_started
     env_file:
       - ./app.env.docker
     environment:
-      AUTH_SERVICE_URL: http://auth-service:8080
-      USER_SERVICE_URL: http://user-micro-service:8080
-      PROFILE_SERVICE_URL: http://userprofile-service:8080
-      BRILLIANT_STUDENT_URL: http://brillientstudent:8080
-      IMAGE_UPLOAD_URL: http://imageupload:8080
-      EVENTS_SERVICE_URL: http://event:8080
-      BUSINESS_SERVICE_URL: http://business:8080
+      AUTH_SERVICE_URL: http://sanyuktnamdev:8081
+      USER_SERVICE_URL: http://sanyuktnamdev:8081
+      PROFILE_SERVICE_URL: http://sanyuktnamdev:8081
+      BRILLIANT_STUDENT_URL: http://sanyuktnamdev:8081
+      IMAGE_UPLOAD_URL: http://sanyuktnamdev:8081
+      EVENTS_SERVICE_URL: http://sanyuktnamdev:8081
+      BUSINESS_SERVICE_URL: http://sanyuktnamdev:8081
 
-  auth-service:
+  sanyuktnamdev:
     build:
-      context: ./AuthService
-    container_name: auth-service
+      context: ./SanyuktNamdev
+    container_name: sanyuktnamdev
     ports:
-      - "8081:8080"
+      - "8081:8081"
     depends_on:
       postgres:
         condition: service_healthy
     env_file:
       - ./app.env.docker
 
-  brillientstudent:
+  dbservice:
     build:
-      context: ./BrillientStudentAchievement
-    container_name: brillientstudent
-    ports:
-      - "8082:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ./app.env.docker
-
-  business:
-    build:
-      context: ./BusinessMicroservice
-    container_name: business
-    ports:
-      - "8083:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ./app.env.docker
-
-  imageupload:
-    build:
-      context: ./ImageUploadService
-    container_name: imageupload
-    ports:
-      - "8084:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ./app.env.docker
-
-  event:
-    build:
-      context: ./NamdevEvents
-    container_name: event
-    ports:
-      - "8085:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ./app.env.docker
-
-  user:
-    build:
-      context: ./UserMicroservice
-    container_name: user-micro-service
-    ports:
-      - "8086:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
-    env_file:
-      - ./app.env.docker
-
-  userprofile:
-    build:
-      context: ./UserProfileMicroservice
-    container_name: userprofile-service
-    ports:
-      - "8087:8080"
+      context: ./DBService
+    container_name: dbservice
     depends_on:
       postgres:
         condition: service_healthy

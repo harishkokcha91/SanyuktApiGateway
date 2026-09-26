@@ -3,7 +3,6 @@ package routes
 import (
 	"SanyuktNamdev/controllers"
 	"SanyuktNamdev/middleware"
-	"fmt"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +19,6 @@ func SetupAuthRoutes(router *gin.Engine) {
 	auth := router.Group("/auth")
 	auth.Use(middleware.AuthMiddleware())
 	auth.GET("/protected", func(c *gin.Context) {
-		fmt.Println(c.Get("userid"))
 		userid, _ := c.Get("userid")
 		c.JSON(200, gin.H{"message": userid.(string)})
 	})
