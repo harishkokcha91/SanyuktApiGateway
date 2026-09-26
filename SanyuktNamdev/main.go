@@ -69,6 +69,7 @@ func main() {
 	routes.EventRoutes(r)
 	routes.UserRoutes(r)
 	routes.ProfileRoutes(r)
+	routes.AdminRoutes(r)
 	// Route for image upload (requires auth)
 	r.POST("/upload", middleware.AuthMiddleware(), uploadImage)
 

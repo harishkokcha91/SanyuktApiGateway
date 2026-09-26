@@ -16,7 +16,7 @@ import (
 )
 
 func setupAdminTestDB(t *testing.T) *gorm.DB {
-	return testhelpers.SetupTestDBWithModels(t, &models.Event{}, &models.Business{}, &models.Achievement{}, &models.User{})
+	return testhelpers.SetupTestDBWithModels(t, &models.Event{}, &models.Business{}, &models.Achievement{}, &models.User{}, &models.Profile{})
 }
 
 func setupAdminRouter(db *gorm.DB) *gin.Engine {
@@ -69,6 +69,14 @@ func setupAdminRouter(db *gorm.DB) *gin.Engine {
 			admin.PUT("/:id", UpdateAchievement)
 			admin.DELETE("/:id", DeleteAchievement)
 		}
+	}
+
+	// Admin approval routes
+	adminGroup := r.Group("/admin")
+	adminGroup.Use(middleware.AuthMiddleware(), middleware.RequireRole("admin"))
+	{
+		adminGroup.PATCH("/:type/:id/approve", AdminApprove)
+		adminGroup.PATCH("/:type/:id/reject", AdminReject)
 	}
 
 	return r
