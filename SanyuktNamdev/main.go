@@ -4,6 +4,7 @@ import (
 	"context"
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/middleware"
+	"SanyuktNamdev/notifications"
 	"SanyuktNamdev/routes"
 	"SanyuktNamdev/utils"
 	"fmt"
@@ -72,6 +73,10 @@ func main() {
 	routes.AdminRoutes(r)
 	// Route for image upload (requires auth)
 	r.POST("/upload", middleware.AuthMiddleware(), uploadImage)
+
+	// Notification routes
+	notifService := notifications.NewService()
+	notifications.RegisterRoutes(r, notifService)
 
 	// Start server with graceful shutdown
 	srv := &http.Server{

@@ -3,6 +3,7 @@ package controllers
 import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/notifications"
 	"SanyuktNamdev/utils"
 	"fmt"
 	"io"
@@ -466,6 +467,21 @@ func UpdateProfile(c *gin.Context) {
 	if err := database.DB.Model(&existingProfile).Updates(updates).Error; err != nil {
 		utils.RespondDBError(c, err)
 		return
+	}
+
+	// Notify admins if owner edited an approved profile (reset to pending)
+	if shouldResetToPending {
+		notifService := notifications.NewService()
+		userIDStr := fmt.Sprintf("%v", userID)
+		userIDVal, _ := strconv.ParseUint(userIDStr, 10, 64)
+		var user models.User
+		ownerName := "Unknown"
+		if err := database.DB.First(&user, uint(userIDVal)).Error; err == nil {
+			ownerName = user.Name
+		}
+		if err := notifService.NotifyOnOwnerEdit("Profile", existingProfile.Name, ownerName); err != nil {
+			fmt.Printf("Failed to send owner edit notification: %v\n", err)
+		}
 	}
 
 	// Re-fetch to return updated data

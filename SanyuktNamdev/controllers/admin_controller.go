@@ -3,6 +3,7 @@ package controllers
 import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/notifications"
 	"SanyuktNamdev/utils"
 	"fmt"
 	"net/http"
@@ -60,6 +61,108 @@ func getAuditFieldsFromType(approvalType AdminApprovalType) (approvedByField, ap
 		return "approved_by", "approved_at", "rejected_by", "rejected_at"
 	default:
 		return "", "", "", ""
+	}
+}
+
+// getOwnerID extracts the owner/user ID from the model instance
+func getOwnerID(modelInstance interface{}, approvalType AdminApprovalType) (uint, error) {
+	modelValue := reflect.ValueOf(modelInstance).Elem()
+
+	var userIDField string
+	switch approvalType {
+	case ApprovalTypeProfile:
+		userIDField = "UserId"
+	case ApprovalTypeBusiness:
+		// Business doesn't have a direct owner field, use 0 for now
+		return 0, nil
+	case ApprovalTypeEvent:
+		// Event doesn't have a direct owner field, use 0 for now
+		return 0, nil
+	case ApprovalTypeAchievement:
+		// Achievement doesn't have a direct owner field, use 0 for now
+		return 0, nil
+	default:
+		return 0, fmt.Errorf("unknown approval type")
+	}
+
+	userIDFieldVal := modelValue.FieldByName(userIDField)
+	if userIDFieldVal.IsValid() && userIDFieldVal.CanInterface() {
+		return userIDFieldVal.Interface().(uint), nil
+	}
+	return 0, nil
+}
+
+// getContentName extracts a display name from the model instance
+func getContentName(modelInstance interface{}, approvalType AdminApprovalType) string {
+	modelValue := reflect.ValueOf(modelInstance).Elem()
+
+	var nameField string
+	switch approvalType {
+	case ApprovalTypeProfile:
+		nameField = "Name"
+	case ApprovalTypeBusiness:
+		nameField = "Name"
+	case ApprovalTypeEvent:
+		nameField = "Name"
+	case ApprovalTypeAchievement:
+		nameField = "Name"
+	default:
+		return "Record"
+	}
+
+	nameFieldVal := modelValue.FieldByName(nameField)
+	if nameFieldVal.IsValid() && nameFieldVal.CanInterface() {
+		return nameFieldVal.Interface().(string)
+	}
+	return "Record"
+}
+
+// getTypeDisplayName returns the display name for the approval type
+func getTypeDisplayName(approvalType AdminApprovalType) string {
+	switch approvalType {
+	case ApprovalTypeProfile:
+		return "Profile"
+	case ApprovalTypeBusiness:
+		return "Business"
+	case ApprovalTypeEvent:
+		return "Event"
+	case ApprovalTypeAchievement:
+		return "Achievement"
+	default:
+		return "Record"
+	}
+}
+
+// sendApprovalNotification sends approval notification to the content owner
+func sendApprovalNotification(approvalType AdminApprovalType, modelInstance interface{}) {
+	ownerID, err := getOwnerID(modelInstance, approvalType)
+	if err != nil || ownerID == 0 {
+		return // No owner to notify (e.g., Business, Event, Achievement don't have owner field yet)
+	}
+
+	contentName := getContentName(modelInstance, approvalType)
+	typeDisplayName := getTypeDisplayName(approvalType)
+
+	notifService := notifications.NewService()
+	if err := notifService.NotifyOnApproval(ownerID, typeDisplayName, contentName); err != nil {
+		// Log error but don't fail the approval
+		fmt.Printf("Failed to send approval notification: %v\n", err)
+	}
+}
+
+// sendRejectionNotification sends rejection notification to the content owner
+func sendRejectionNotification(approvalType AdminApprovalType, modelInstance interface{}, reason string) {
+	ownerID, err := getOwnerID(modelInstance, approvalType)
+	if err != nil || ownerID == 0 {
+		return // No owner to notify
+	}
+
+	contentName := getContentName(modelInstance, approvalType)
+	typeDisplayName := getTypeDisplayName(approvalType)
+
+	notifService := notifications.NewService()
+	if err := notifService.NotifyOnRejection(ownerID, typeDisplayName, contentName, reason); err != nil {
+		fmt.Printf("Failed to send rejection notification: %v\n", err)
 	}
 }
 
@@ -131,6 +234,9 @@ func AdminApprove(c *gin.Context) {
 		utils.RespondDBError(c, err)
 		return
 	}
+
+	// Send approval notification to content owner
+	sendApprovalNotification(approvalType, modelInstance)
 
 	// Fetch updated record
 	if err := database.DB.First(modelInstance, id).Error; err != nil {
@@ -219,6 +325,9 @@ func AdminReject(c *gin.Context) {
 		utils.RespondDBError(c, err)
 		return
 	}
+
+	// Send rejection notification to content owner
+	sendRejectionNotification(approvalType, modelInstance, req.Reason)
 
 	// Fetch updated record
 	if err := modelDB.First(modelInstance, id).Error; err != nil {

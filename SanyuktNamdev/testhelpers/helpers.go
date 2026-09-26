@@ -208,3 +208,19 @@ func ParseTime(t *testing.T, timeStr string) time.Time {
 	require.NoError(t, err)
 	return parsed
 }
+
+// CreateTestNotification creates a test notification in the database
+func CreateTestNotification(t *testing.T, db *gorm.DB, id uint, userID uint, notifType, message string) *models.Notification {
+	t.Helper()
+	notification := &models.Notification{
+		UserID:  userID,
+		Type:    notifType,
+		Message: message,
+		Channel: string(models.ChannelInApp),
+		Status:  string(models.StatusPending),
+	}
+	notification.ID = id
+	err := db.Create(notification).Error
+	require.NoError(t, err)
+	return notification
+}
