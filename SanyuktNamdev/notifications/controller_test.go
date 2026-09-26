@@ -59,7 +59,7 @@ func TestController_GetNotifications_UnreadOnly(t *testing.T) {
 	service := NewService()
 	// Create read notification
 	n1, _ := service.CreateInAppNotification(user.ID, "Approval", "Read notification")
-	n1.Status = string(models.StatusSent)
+	n1.Status = models.StatusSent
 	db.Save(n1)
 
 	// Create unread notifications
@@ -141,7 +141,7 @@ func TestController_MarkAsRead(t *testing.T) {
 
 	var saved models.Notification
 	db.First(&saved, notification.ID)
-	assert.Equal(t, string(models.StatusSent), saved.Status)
+	assert.Equal(t, models.StatusSent, saved.Status)
 }
 
 func TestController_MarkAsRead_MarkReadAlias(t *testing.T) {
@@ -166,7 +166,7 @@ func TestController_MarkAsRead_MarkReadAlias(t *testing.T) {
 
 	var saved models.Notification
 	db.First(&saved, notification.ID)
-	assert.Equal(t, string(models.StatusSent), saved.Status)
+	assert.Equal(t, models.StatusSent, saved.Status)
 }
 
 func TestController_MarkAsRead_NotFound(t *testing.T) {
@@ -213,7 +213,7 @@ func TestController_MarkAllAsRead(t *testing.T) {
 }
 
 func TestController_SendTestNotification_AdminSuccess(t *testing.T) {
-	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{})
+	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{}, &models.NotificationPreference{})
 	defer func() { sqlDB, _ := db.DB(); sqlDB.Close() }()
 
 	// Create admin user
@@ -230,7 +230,7 @@ func TestController_SendTestNotification_AdminSuccess(t *testing.T) {
 
 	body := map[string]interface{}{
 		"user_id":  targetUser.ID,
-		"type":     "System",
+		"type":     string(models.NotificationTypeSystem),
 		"message":  "Test notification",
 		"channel":  "in-app",
 	}
@@ -251,12 +251,12 @@ func TestController_SendTestNotification_AdminSuccess(t *testing.T) {
 
 	// Verify notification was created in DB
 	var count int64
-	db.Model(&models.Notification{}).Where("user_id = ? AND type = ?", targetUser.ID, "System").Count(&count)
+	db.Model(&models.Notification{}).Where("user_id = ? AND type = ?", targetUser.ID, models.NotificationTypeSystem).Count(&count)
 	assert.Equal(t, int64(1), count)
 }
 
 func TestController_SendTestNotification_NonAdminForbidden(t *testing.T) {
-	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{})
+	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{}, &models.NotificationPreference{})
 	defer func() { sqlDB, _ := db.DB(); sqlDB.Close() }()
 
 	token := testhelpers.GenerateTestToken(t, "1", "user")
@@ -268,7 +268,7 @@ func TestController_SendTestNotification_NonAdminForbidden(t *testing.T) {
 
 	body := map[string]interface{}{
 		"user_id":  targetUser.ID,
-		"type":     "System",
+		"type":     string(models.NotificationTypeSystem),
 		"message":  "Test notification",
 		"channel":  "in-app",
 	}
@@ -284,7 +284,7 @@ func TestController_SendTestNotification_NonAdminForbidden(t *testing.T) {
 }
 
 func TestController_SendTestNotification_InvalidChannel(t *testing.T) {
-	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{})
+	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{}, &models.NotificationPreference{})
 	defer func() { sqlDB, _ := db.DB(); sqlDB.Close() }()
 
 	admin := testhelpers.CreateTestUser(t, db, 1, "admin@test.com", "Admin")
@@ -299,7 +299,7 @@ func TestController_SendTestNotification_InvalidChannel(t *testing.T) {
 
 	body := map[string]interface{}{
 		"user_id":  targetUser.ID,
-		"type":     "System",
+		"type":     string(models.NotificationTypeSystem),
 		"message":  "Test notification",
 		"channel":  "invalid",
 	}
@@ -315,7 +315,7 @@ func TestController_SendTestNotification_InvalidChannel(t *testing.T) {
 }
 
 func TestController_SendTestNotification_MissingFields(t *testing.T) {
-	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{})
+	db := testhelpers.SetupTestDBWithModels(t, &models.User{}, &models.Profile{}, &models.Notification{}, &models.NotificationPreference{})
 	defer func() { sqlDB, _ := db.DB(); sqlDB.Close() }()
 
 	admin := testhelpers.CreateTestUser(t, db, 1, "admin@test.com", "Admin")
@@ -328,7 +328,7 @@ func TestController_SendTestNotification_MissingFields(t *testing.T) {
 	r := setupTestRouter(db, service)
 
 	body := map[string]interface{}{
-		"type":     "System",
+		"type":     string(models.NotificationTypeSystem),
 		"message":  "Test notification",
 		"channel":  "in-app",
 	}

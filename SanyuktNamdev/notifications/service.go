@@ -49,10 +49,10 @@ func DefaultConfig() NotificationConfig {
 func (s *Service) CreateInAppNotification(userID uint, notifType, message string) (*models.Notification, error) {
 	notification := &models.Notification{
 		UserID:  userID,
-		Type:    notifType,
+		Type:    models.NotificationType(notifType),
 		Message: message,
-		Channel: string(models.ChannelInApp),
-		Status:  string(models.StatusPending),
+		Channel: models.ChannelInApp,
+		Status:  models.StatusPending,
 	}
 
 	if err := s.db.Create(notification).Error; err != nil {
@@ -66,10 +66,10 @@ func (s *Service) CreateInAppNotification(userID uint, notifType, message string
 func (s *Service) CreateEmailNotification(userID uint, notifType, message string) (*models.Notification, error) {
 	notification := &models.Notification{
 		UserID:  userID,
-		Type:    notifType,
+		Type:    models.NotificationType(notifType),
 		Message: message,
-		Channel: string(models.ChannelEmail),
-		Status:  string(models.StatusPending),
+		Channel: models.ChannelEmail,
+		Status:  models.StatusPending,
 	}
 
 	if err := s.db.Create(notification).Error; err != nil {
@@ -80,7 +80,18 @@ func (s *Service) CreateEmailNotification(userID uint, notifType, message string
 }
 
 // QueueNotification queues a notification for a specific channel
+// It respects user notification preferences - if user has disabled a channel, it won't create the notification
 func (s *Service) QueueNotification(userID uint, notifType string, channel models.NotificationChannel, message string) (*models.Notification, error) {
+	// Check user preferences
+	enabled, err := s.isChannelEnabled(userID, channel)
+	if err != nil {
+		return nil, err
+	}
+	if !enabled {
+		// Channel is disabled for this user, return nil without error
+		return nil, nil
+	}
+
 	switch channel {
 	case models.ChannelInApp:
 		return s.CreateInAppNotification(userID, notifType, message)
@@ -90,10 +101,10 @@ func (s *Service) QueueNotification(userID uint, notifType string, channel model
 		// Push notifications - placeholder for future implementation
 		notification := &models.Notification{
 			UserID:  userID,
-			Type:    notifType,
+			Type:    models.NotificationType(notifType),
 			Message: message,
-			Channel: string(models.ChannelPush),
-			Status:  string(models.StatusPending),
+			Channel: models.ChannelPush,
+			Status:  models.StatusPending,
 		}
 		if err := s.db.Create(notification).Error; err != nil {
 			return nil, fmt.Errorf("failed to create push notification: %w", err)
@@ -102,6 +113,22 @@ func (s *Service) QueueNotification(userID uint, notifType string, channel model
 	default:
 		return nil, fmt.Errorf("unsupported notification channel: %s", channel)
 	}
+}
+
+// isChannelEnabled checks if a notification channel is enabled for a user
+func (s *Service) isChannelEnabled(userID uint, channel models.NotificationChannel) (bool, error) {
+	var preference models.NotificationPreference
+	err := s.db.Where("user_id = ? AND channel = ?", userID, channel).First(&preference).Error
+
+	if err == gorm.ErrRecordNotFound {
+		// No preference set, default to enabled
+		return true, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check notification preference: %w", err)
+	}
+
+	return preference.Enabled, nil
 }
 
 // SendEmailNotification sends an email notification
@@ -122,7 +149,7 @@ func (s *Service) SendEmailNotification(notification *models.Notification) error
 	log.Printf("EMAIL to %s: %s - %s", user.Email, notification.Type, notification.Message)
 
 	// Update status to sent
-	notification.Status = string(models.StatusSent)
+	notification.Status = models.StatusSent
 	now := time.Now()
 	notification.SentAt = &now
 	if err := s.db.Save(notification).Error; err != nil {
@@ -146,7 +173,7 @@ func (s *Service) ProcessPendingEmails(ctx context.Context) error {
 		default:
 			if err := s.SendEmailNotification(&notif); err != nil {
 				log.Printf("Failed to send email notification %d: %v", notif.ID, err)
-				notif.Status = string(models.StatusFailed)
+				notif.Status = models.StatusFailed
 				s.db.Save(&notif)
 			}
 		}

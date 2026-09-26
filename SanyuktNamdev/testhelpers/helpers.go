@@ -23,7 +23,7 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
 	require.NoError(t, err)
 
-	err = db.AutoMigrate(&models.User{}, &models.Profile{}, &models.Event{}, &models.Business{}, &models.Achievement{})
+	err = db.AutoMigrate(&models.User{}, &models.Profile{}, &models.Event{}, &models.Business{}, &models.Achievement{}, &models.Notification{}, &models.NotificationPreference{})
 	require.NoError(t, err)
 
 	database.DB = db
@@ -214,10 +214,10 @@ func CreateTestNotification(t *testing.T, db *gorm.DB, id uint, userID uint, not
 	t.Helper()
 	notification := &models.Notification{
 		UserID:  userID,
-		Type:    notifType,
+		Type:    models.NotificationType(notifType),
 		Message: message,
-		Channel: string(models.ChannelInApp),
-		Status:  string(models.StatusPending),
+		Channel: models.ChannelInApp,
+		Status:  models.StatusPending,
 	}
 	notification.ID = id
 	err := db.Create(notification).Error
