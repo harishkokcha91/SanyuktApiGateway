@@ -3,6 +3,7 @@ package controllers
 import (
 	initializers "SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
 	"strconv"
@@ -20,12 +21,15 @@ func GetEvents(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	if err := initializers.DB.Offset(offset).Limit(limit).Find(&events).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch events"})
+		utils.RespondInternalError(c, "Failed to fetch events")
 		return
 	}
 
 	var totalRecords int64
-	initializers.DB.Model(&models.Event{}).Count(&totalRecords)
+	if err := initializers.DB.Model(&models.Event{}).Count(&totalRecords).Error; err != nil {
+		utils.RespondInternalError(c, "Failed to count events")
+		return
+	}
 
 	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
 
@@ -56,14 +60,17 @@ func CreateEvent(c *gin.Context) {
 	var event models.Event
 
 	if err := c.ShouldBindJSON(&event); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	event.CreatedAt = time.Now()
 	event.UpdatedAt = time.Now()
 
-	initializers.DB.Create(&event)
+	if err := initializers.DB.Create(&event).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusCreated, event)
 }
 
@@ -73,17 +80,20 @@ func UpdateEvent(c *gin.Context) {
 	var event models.Event
 
 	if err := initializers.DB.First(&event, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+		utils.RespondNotFound(c, "Event not found")
 		return
 	}
 
 	if err := c.ShouldBindJSON(&event); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	event.UpdatedAt = time.Now()
-	initializers.DB.Save(&event)
+	if err := initializers.DB.Save(&event).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, event)
 }
@@ -94,10 +104,13 @@ func DeleteEvent(c *gin.Context) {
 	var event models.Event
 
 	if err := initializers.DB.First(&event, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Event not found"})
+		utils.RespondNotFound(c, "Event not found")
 		return
 	}
 
-	initializers.DB.Delete(&event)
+	if err := initializers.DB.Delete(&event).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "Event deleted successfully"})
 }

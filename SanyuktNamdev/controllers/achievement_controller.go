@@ -3,6 +3,7 @@ package controllers
 import (
 	initializers "SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
 	"strconv"
@@ -14,10 +15,13 @@ import (
 func CreateAchievement(c *gin.Context) {
 	var achievement models.Achievement
 	if err := c.ShouldBindJSON(&achievement); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
-	initializers.DB.Create(&achievement)
+	if err := initializers.DB.Create(&achievement).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusCreated, achievement)
 }
 
@@ -31,13 +35,13 @@ func GetAchievements(c *gin.Context) {
 	// Convert page & limit to integers
 	pageInt, err := strconv.Atoi(page)
 	if err != nil || pageInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		utils.RespondValidationError(c, "Invalid page number")
 		return
 	}
 
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil || limitInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+		utils.RespondValidationError(c, "Invalid limit")
 		return
 	}
 
@@ -46,14 +50,14 @@ func GetAchievements(c *gin.Context) {
 
 	// Fetch paginated achievements
 	if err := initializers.DB.Offset(offset).Limit(limitInt).Find(&achievements).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch achievements"})
+		utils.RespondInternalError(c, "Failed to fetch achievements")
 		return
 	}
 
 	// Get the total number of records
 	var totalRecords int64
 	if err := initializers.DB.Model(&models.Achievement{}).Count(&totalRecords).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch total records"})
+		utils.RespondInternalError(c, "Failed to fetch total records")
 		return
 	}
 
@@ -75,7 +79,7 @@ func GetAchievementByID(c *gin.Context) {
 	id := c.Param("id")
 	var achievement models.Achievement
 	if err := initializers.DB.First(&achievement, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Achievement not found"})
+		utils.RespondNotFound(c, "Achievement not found")
 		return
 	}
 	c.JSON(http.StatusOK, achievement)
@@ -86,16 +90,19 @@ func UpdateAchievement(c *gin.Context) {
 	id := c.Param("id")
 	var achievement models.Achievement
 	if err := initializers.DB.First(&achievement, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Achievement not found"})
+		utils.RespondNotFound(c, "Achievement not found")
 		return
 	}
 
 	if err := c.ShouldBindJSON(&achievement); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
-	initializers.DB.Save(&achievement)
+	if err := initializers.DB.Save(&achievement).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, achievement)
 }
 
@@ -103,7 +110,7 @@ func UpdateAchievement(c *gin.Context) {
 func DeleteAchievement(c *gin.Context) {
 	id := c.Param("id")
 	if err := initializers.DB.Delete(&models.Achievement{}, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Achievement not found"})
+		utils.RespondDBError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Achievement deleted successfully"})

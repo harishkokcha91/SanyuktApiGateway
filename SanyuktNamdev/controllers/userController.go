@@ -3,6 +3,7 @@ package controllers
 import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
 	"strconv"
@@ -20,13 +21,13 @@ func GetUsers(c *gin.Context) {
 	// Convert page and limit to integers
 	pageInt, err := strconv.Atoi(page)
 	if err != nil || pageInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid page number"})
+		utils.RespondValidationError(c, "Invalid page number")
 		return
 	}
 
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil || limitInt < 1 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit"})
+		utils.RespondValidationError(c, "Invalid limit")
 		return
 	}
 
@@ -62,7 +63,7 @@ func GetUserByID(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
 	if err := database.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondNotFound(c, "User not found")
 		return
 	}
 	c.JSON(http.StatusOK, user)
@@ -71,12 +72,12 @@ func GetUserByID(c *gin.Context) {
 func CreateUser(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	if err := database.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		utils.RespondDBError(c, err)
 		return
 	}
 
@@ -87,23 +88,26 @@ func UpdateUser(c *gin.Context) {
 	id := c.Param("id")
 	var user models.User
 	if err := database.DB.First(&user, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondNotFound(c, "User not found")
 		return
 	}
 
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
-	database.DB.Save(&user)
+	if err := database.DB.Save(&user).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully", "user": user})
 }
 
 func DeleteUser(c *gin.Context) {
 	id := c.Param("id")
 	if err := database.DB.Delete(&models.User{}, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondDBError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})

@@ -3,6 +3,7 @@ package controllers
 import (
 	"SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"fmt"
 	"io"
 	"math"
@@ -134,11 +135,14 @@ func GetProfilesByUserID(c *gin.Context) {
 func CreateProfile(c *gin.Context) {
 	var user models.Profile
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 	user.Status = "pending"
-	database.DB.Create(&user)
+	if err := database.DB.Create(&user).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusCreated, user)
 }
 
@@ -203,7 +207,7 @@ func UploadImageForProfile(c *gin.Context, userID string) (string, error) {
 func CreateProfileWithImage(c *gin.Context) {
 	// Parse form data
 	if err := c.Request.ParseMultipartForm(10 << 20); err != nil { // 10MB limit
-		c.JSON(http.StatusBadRequest, gin.H{"error": "File too large"})
+		utils.RespondValidationError(c, "File too large")
 		return
 	}
 
@@ -216,13 +220,16 @@ func CreateProfileWithImage(c *gin.Context) {
 	// Upload image
 	imagePath, err := UploadImageForProfile(c, user.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.RespondInternalError(c, err.Error())
 		return
 	}
 	user.Image = imagePath
 
 	// Save user in database
-	database.DB.Create(&user)
+	if err := database.DB.Create(&user).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": user})
 }
@@ -243,19 +250,22 @@ func UpdateProfile(c *gin.Context) {
 
 	// Fetch the existing user
 	if err := database.DB.First(&existingUser, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		utils.RespondNotFound(c, "User not found")
 		return
 	}
 
 	// Create a new struct to hold updates
 	var updatedData models.Profile
 	if err := c.ShouldBindJSON(&updatedData); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	// Update only non-empty fields
-	database.DB.Model(&existingUser).Updates(updatedData)
+	if err := database.DB.Model(&existingUser).Updates(updatedData).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, existingUser)
 }

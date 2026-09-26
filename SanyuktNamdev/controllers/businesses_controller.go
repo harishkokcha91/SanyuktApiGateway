@@ -3,6 +3,7 @@ package controllers
 import (
 	initializers "SanyuktNamdev/database"
 	"SanyuktNamdev/models"
+	"SanyuktNamdev/utils"
 	"math"
 	"net/http"
 	"strconv"
@@ -20,12 +21,15 @@ func GetBusinesses(c *gin.Context) {
 	offset := (page - 1) * limit
 
 	if err := initializers.DB.Offset(offset).Limit(limit).Find(&businesses).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch businesses"})
+		utils.RespondInternalError(c, "Failed to fetch businesses")
 		return
 	}
 
 	var totalRecords int64
-	initializers.DB.Model(&models.Business{}).Count(&totalRecords)
+	if err := initializers.DB.Model(&models.Business{}).Count(&totalRecords).Error; err != nil {
+		utils.RespondInternalError(c, "Failed to count businesses")
+		return
+	}
 
 	totalPages := int(math.Ceil(float64(totalRecords) / float64(limit)))
 
@@ -56,14 +60,17 @@ func CreateBusiness(c *gin.Context) {
 	var business models.Business
 
 	if err := c.ShouldBindJSON(&business); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	business.CreatedAt = time.Now()
 	business.UpdatedAt = time.Now()
 
-	initializers.DB.Create(&business)
+	if err := initializers.DB.Create(&business).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 	c.JSON(http.StatusCreated, business)
 }
 
@@ -73,17 +80,20 @@ func UpdateBusiness(c *gin.Context) {
 	var business models.Business
 
 	if err := initializers.DB.First(&business, id).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})
+		utils.RespondNotFound(c, "Business not found")
 		return
 	}
 
 	if err := c.ShouldBindJSON(&business); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.RespondValidationError(c, err.Error())
 		return
 	}
 
 	business.UpdatedAt = time.Now()
-	initializers.DB.Save(&business)
+	if err := initializers.DB.Save(&business).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
 
 	c.JSON(http.StatusOK, business)
 }
@@ -92,6 +102,17 @@ func UpdateBusiness(c *gin.Context) {
 func DeleteBusiness(c *gin.Context) {
 	id := c.Param("id")
 	var business models.Business
+
+	if err := initializers.DB.First(&business, id).Error; err != nil {
+		utils.RespondNotFound(c, "Business not found")
+		return
+	}
+
+	if err := initializers.DB.Delete(&business).Error; err != nil {
+		utils.RespondDBError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Business deleted successfully"})
 
 	if err := initializers.DB.First(&business, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Business not found"})

@@ -2,6 +2,7 @@ package main
 
 import (
 	"SanyuktNamdev/database"
+	"SanyuktNamdev/middleware"
 	"SanyuktNamdev/routes"
 	"fmt"
 	"log"
@@ -11,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -33,20 +33,14 @@ func main() {
 	// Initialize Database
 	database.Connect()
 	// Create Router
-	r := gin.Default()
-	// Setup Routes
-	// Healthcheck route
-	// CORS middleware configuration
-	r.Use(cors.New(cors.Config{
-		// AllowOrigins: []string{"http://localhost:50001", "http://127.0.0.1:50001"},
-		AllowOrigins:     []string{"*"}, // Adjust frontend URL
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Authorization", "Content-Type"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+	r := gin.New()
 
+	// Add middleware
+	r.Use(middleware.RequestIDMiddleware())
+	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.CORSMiddleware())
+
+	// Healthcheck route
 	r.GET("/healthcheck", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "AuthService is running"})
 	})

@@ -14,15 +14,19 @@ import (
 func Register(c *gin.Context) {
 	var user models.User
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		utils.RespondValidationError(c, "Invalid input")
 		return
 	}
 	// Hash password before storing
-	hashedPassword, _ := utils.HashPassword(user.Password)
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to hash password")
+		return
+	}
 	user.Password = hashedPassword
 
 	if err := config.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "User already exists"})
+		utils.RespondDBError(c, err)
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User registered successfully", "user": user})
@@ -34,30 +38,28 @@ func Login(c *gin.Context) {
 	var user models.User
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		utils.RespondValidationError(c, "Invalid input")
 		return
 	}
 
 	// Check if user exists
 	if err := config.DB.Where("email = ?", input.Email).First(&user).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		utils.RespondUnauthorized(c, "Invalid credentials")
 		return
 	}
 
 	// Compare password
 	if !utils.CheckPasswordHash(input.Password, user.Password) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		utils.RespondUnauthorized(c, "Invalid credentials")
 		return
 	}
 	// Generate JWT Token
 	userIDStr := fmt.Sprintf("%d", user.ID)
-	token, _ := utils.GenerateToken(userIDStr)
-	// claims, err := utils.ValidateToken(token)
-	// if err != nil {
-	// 	c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
-	// 	c.Abort()
-	// 	return
-	// }
+	token, err := utils.GenerateToken(userIDStr)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to generate token")
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"token": token, "user": user, "message": "Login successful"})
 }
@@ -67,7 +69,7 @@ func RegisterUserIfExistReturnUser(c *gin.Context) {
 	var user models.User
 	// Bind the JSON payload to the user struct
 	if err := c.ShouldBindJSON(&user); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		utils.RespondValidationError(c, "Invalid input")
 		return
 	}
 
@@ -81,12 +83,16 @@ func RegisterUserIfExistReturnUser(c *gin.Context) {
 	}
 
 	// Hash password before storing
-	hashedPassword, _ := utils.HashPassword(user.Password)
+	hashedPassword, err := utils.HashPassword(user.Password)
+	if err != nil {
+		utils.RespondInternalError(c, "Failed to hash password")
+		return
+	}
 	user.Password = hashedPassword
 
 	// Create the new user in the database
 	if err := config.DB.Create(&user).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to register user"})
+		utils.RespondError(c, http.StatusBadRequest, "Failed to register user")
 		return
 	}
 
