@@ -5,7 +5,6 @@ import (
 	"SanyuktNamdev/models"
 	"fmt"
 	"io"
-	"log"
 	"math"
 	"net/http"
 	"os"
@@ -228,15 +227,15 @@ func CreateProfileWithImage(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"message": "User created successfully", "user": user})
 }
 
-func convertProfileDateFormat(inputDate string) time.Time {
+func convertProfileDateFormat(inputDate string) (time.Time, error) {
 	const customDateFormat = "2006-01-02" // Format for date without time component
 
 	// Parse the date from JSON
 	dateOfBirth, err := time.Parse(customDateFormat, inputDate)
 	if err != nil {
-		log.Fatal("Error parsing date: ", err)
+		return time.Time{}, fmt.Errorf("invalid date format, expected YYYY-MM-DD: %w", err)
 	}
-	return dateOfBirth
+	return dateOfBirth, nil
 }
 func UpdateProfile(c *gin.Context) {
 	id := c.Param("id")

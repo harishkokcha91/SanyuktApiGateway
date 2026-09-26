@@ -18,7 +18,6 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	fmt.Println(user)
 	// Hash password before storing
 	hashedPassword, _ := utils.HashPassword(user.Password)
 	user.Password = hashedPassword
@@ -51,10 +50,8 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
-	fmt.Println(user)
 	// Generate JWT Token
 	userIDStr := fmt.Sprintf("%d", user.ID)
-	fmt.Println(userIDStr)
 	token, _ := utils.GenerateToken(userIDStr)
 	// claims, err := utils.ValidateToken(token)
 	// if err != nil {
